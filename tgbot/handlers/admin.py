@@ -7,6 +7,7 @@ from tgbot.config import Config
 from tgbot.keyboards.callback_datas import act_callback
 from tgbot.misc.misc_commands import format_channel_link
 from tgbot.misc.states import AdminStates
+from tgbot.models.channel_interactions import ChannelInteractions
 from tgbot.models.postgresql import Database
 
 
@@ -109,19 +110,24 @@ async def get_bank_photo(message: types.Message, state):
                                reply_markup=reply_markup)
 
 
-async def adm_confirm_bank_creation(cq: types.CallbackQuery, db: Database, state):
-    await state.reset_state()
+async def adm_confirm_bank_creation(cq: types.CallbackQuery, db: Database, state, config: Config):
+    await state.reset_state(with_data=False)
     back_to_main_menu = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="❌ Главное меню",
                               callback_data=act_callback.new(act="back_to_main_menu"))]])
-    data = state.get_data()
+    data = await state.get_data()
+    await state.reset_state()
 
-    await db.add_bank(
-        bank_name=data["bank_name"],
-        bank_description=data["bank_desc"],
-        bank_photo=data["photo_file_id"],
-        bank_url=data["bank_url"])
-
+    bank = await db.add_bank(
+                            bank_name=data["bank_name"],
+                            bank_description=data["bank_desc"],
+                            bank_photo=data["photo_file_id"],
+                            bank_url=data["bank_url"])
+    for channel in config.tg_bot.channels:
+        await ChannelInteractions.add_bank_to_channel(bot=cq.bot,
+                                                      bank_id=bank["bank_id"],
+                                                      db=db,
+                                                      channel_id=channel)
     await cq.message.edit_caption(caption="Банк был успешно создан!", reply_markup=back_to_main_menu)
 
 

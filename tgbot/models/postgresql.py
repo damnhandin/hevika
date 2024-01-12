@@ -29,6 +29,7 @@ class Database:
     async def create_table_banks(self):
         sql = """
         CREATE TABLE IF NOT EXISTS banks (
+        bank_id SERIAL PRIMARY KEY,
         bank_name VARCHAR(120) NOT NULL, 
         bank_description VARCHAR(255) NOT NULL, 
         bank_photo VARCHAR(128) NOT NULL, 
@@ -36,6 +37,23 @@ class Database:
         );
         """
         await self.execute(sql, execute=True)
+
+    async def create_table_bank_posts(self):
+        sql = """
+        CREATE TABLE IF NOT EXISTS bank_posts (
+        bank_id INT REFERENCES banks(bank_id) ON DELETE NO ACTION ON UPDATE CASCADE,
+        channel_id BIGINT NOT NULL,
+        post_id BIGINT NOT NULL);
+        """
+        await self.execute(sql, execute=True)
+
+    async def add_post_to_bd(self, bank_id, channel_id, post_id):
+        sql = "INSERT INTO bank_posts (bank_id, channel_id, post_id) VALUES ($1, $2, $3);"
+        await self.execute(sql, bank_id, channel_id, post_id, execute=True)
+
+    async def select_bank_by_id(self, bank_id):
+        sql = "SELECT * FROM banks WHERE bank_id=$1;"
+        return await self.execute(sql, bank_id, fetchrow=True)
 
     async def select_user_tg_id(self, telegram_id):
         sql = "SELECT * FROM users WHERE telegram_id=$1;"
@@ -52,14 +70,18 @@ class Database:
                            execute=True)
 
     async def add_bank(self, bank_name, bank_description, bank_photo, bank_url):
-        sql = "INSERT INTO banks (bank_name, bank_description, bank_photo, bank_url) VALUES ($1, $2, $3, $4)"
-        await self.execute(sql, bank_name, bank_description, bank_photo, bank_url, execute=True)
+        sql = "INSERT INTO banks (bank_name, bank_description, bank_photo, bank_url) " \
+              "VALUES ($1, $2, $3, $4) RETURNING *;"
+        return await self.execute(sql, bank_name, bank_description, bank_photo, bank_url, fetchrow=True)
 
     async def drop_table_users(self):
         await self.execute("DROP TABLE IF EXISTS users;", execute=True)
 
     async def drop_table_banks(self):
         await self.execute("DROP TABLE IF EXISTS banks;", execute=True)
+
+    async def drop_table_bank_posts(self):
+        await self.execute("DROP TABLE IF EXISTS bank_posts", execute=True)
 
     async def execute(self, command, *args,
                       fetch: bool = False,
