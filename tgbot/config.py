@@ -23,6 +23,7 @@ class TgBot:
 
 @dataclass
 class Miscellaneous:
+    main_photo: str
     other_params: str = None
 
 
@@ -52,5 +53,7 @@ def load_config(path: str = None):
             user=env.str('DB_USER'),
             database=env.str('DB_NAME')
         ),
-        misc=Miscellaneous()
+        misc=Miscellaneous(
+            main_photo="AgACAgIAAxkBAAPYZaKG1eSly_2gkH58z44iQ-SMPOIAAo_SMRtMIBlJKk4PztQ4LIABAAMCAANtAAM0BA"
+        )
     )

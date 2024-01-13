@@ -33,9 +33,9 @@ def register_all_handlers(dp):
 
 async def start_db(db: Database):
     # DROP TABLE
-    await db.drop_table_users()
-    await db.drop_table_bank_posts()
-    await db.drop_table_banks()
+    # await db.drop_table_users()
+    # await db.drop_table_bank_posts()
+    # await db.drop_table_banks()
 
     # CREATE TABLE
     await db.create_table_users()

@@ -31,9 +31,9 @@ class Database:
         CREATE TABLE IF NOT EXISTS banks (
         bank_id SERIAL PRIMARY KEY,
         bank_name VARCHAR(120) NOT NULL, 
-        bank_description VARCHAR(255) NOT NULL, 
+        bank_description VARCHAR(800) NOT NULL, 
         bank_photo VARCHAR(128) NOT NULL, 
-        bank_url VARCHAR(128) NOT NULL
+        bank_url VARCHAR(256) NOT NULL
         );
         """
         await self.execute(sql, execute=True)
@@ -58,6 +58,15 @@ class Database:
     async def select_user_tg_id(self, telegram_id):
         sql = "SELECT * FROM users WHERE telegram_id=$1;"
         return await self.execute(sql, telegram_id, fetchrow=True)
+
+    async def count_amount_of_bank_pages(self):
+        return await self.execute("SELECT COUNT(*) FROM banks", fetchval=True) or 1
+
+    async def select_bank_offset(self, offset):
+        offset = offset - 1
+        if offset < 0:
+            offset = 0
+        return await self.execute("SELECT * FROM banks OFFSET $1", offset, fetchrow=True)
 
     async def add_user(self, username, first_name, last_name, full_name, telegram_id):
         registration_date = datetime.now()
