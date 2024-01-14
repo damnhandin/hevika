@@ -47,6 +47,16 @@ class Database:
         """
         await self.execute(sql, execute=True)
 
+    async def create_table_user_banks(self):
+        sql = """
+        CREATE TABLE IF NOT EXISTS user_banks (
+        user_telegram_id INT REFERENCES users(telegram_id) ON DELETE NO ACTION ON UPDATE CASCADE,
+        bank_id INT REFERENCES banks(bank_id) ON DELETE CASCADE ON UPDATE CASCADE,
+        status INT NOT NULL
+        );
+        """
+        await self.execute(sql, execute=True)
+
     async def add_post_to_bd(self, bank_id, channel_id, post_id):
         sql = "INSERT INTO bank_posts (bank_id, channel_id, post_id) VALUES ($1, $2, $3);"
         await self.execute(sql, bank_id, channel_id, post_id, execute=True)
@@ -66,7 +76,8 @@ class Database:
         offset = offset - 1
         if offset < 0:
             offset = 0
-        return await self.execute("SELECT * FROM banks OFFSET $1", offset, fetchrow=True)
+        sql = "SELECT * FROM banks OFFSET $1"
+        return await self.execute(sql, offset, fetchrow=True)
 
     async def add_user(self, username, first_name, last_name, full_name, telegram_id):
         registration_date = datetime.now()
@@ -77,6 +88,22 @@ class Database:
         """
         await self.execute(sql, username, first_name, last_name, full_name, registration_date, telegram_id,
                            execute=True)
+
+    async def user_add_or_delete_bank_to_favorites(self, telegram_id, bank_id):
+        async with self._transaction(isolation="serializable") as connection:
+            sql = """
+            SELECT * FROM user_banks 
+            WHERE user_telegram_id=$1 AND bank_id=$2
+            FOR UPDATE;"""
+            bank = await connection.fetchrow(sql, telegram_id, bank_id)
+            res = None
+            if bank is None:
+                sql = "INSERT INTO user_banks (user_telegram_id, bank_id, status) VALUES ($1, $2, 1) RETURNING *;"
+                res = await connection.fetchrow(sql, telegram_id, bank_id)
+            elif bank.get("status") == 1:
+                sql = "DELETE FROM user_banks WHERE user_telegram_id=$1 AND bank_id=$2"
+                await connection.execute(sql, telegram_id, bank_id)
+            return res
 
     async def add_bank(self, bank_name, bank_description, bank_photo, bank_url):
         sql = "INSERT INTO banks (bank_name, bank_description, bank_photo, bank_url) " \
@@ -91,6 +118,9 @@ class Database:
 
     async def drop_table_bank_posts(self):
         await self.execute("DROP TABLE IF EXISTS bank_posts", execute=True)
+
+    async def drop_table_user_banks(self):
+        await self.execute("DROP TABLE IF EXISTS user_banks", execute=True)
 
     async def execute(self, command, *args,
                       fetch: bool = False,

@@ -36,11 +36,13 @@ async def start_db(db: Database):
     # await db.drop_table_users()
     # await db.drop_table_bank_posts()
     # await db.drop_table_banks()
+    # await db.drop_table_user_banks()
 
     # CREATE TABLE
     await db.create_table_users()
     await db.create_table_banks()
     await db.create_table_bank_posts()
+    await db.create_table_user_banks()
 
 
 async def main():

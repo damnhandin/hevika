@@ -13,16 +13,17 @@ from tgbot.models.channel_interactions import ChannelInteractions
 from tgbot.models.image_paginator import ImagePaginator
 from tgbot.models.postgresql import Database
 
+
 async def open_admin_main_menu(target: Union[types.CallbackQuery, types.Message], config: Config):
     channel_url = await format_channel_link(config.tg_bot.channel_tag)
     reply_markup = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="Добавить новый банк",
                               callback_data=adm_act_callback.new(act="add_new_bank"))],
-        [InlineKeyboardButton(text="Карусель банков",
+        [InlineKeyboardButton(text="Карусель займов",
                               callback_data=adm_bank_navg.new(act="adm_bank_carousel",
                                                               c_p="1",
                                                               menu="bank_preview"))],
-        [InlineKeyboardButton(text="Все банки", url=channel_url)],
+        [InlineKeyboardButton(text="Все займы", url=channel_url)],
     ])
     if isinstance(target, types.CallbackQuery):
         if target.message.content_type == ContentType.TEXT:
@@ -182,7 +183,8 @@ async def adm_bank_carousel(cq: types.CallbackQuery, db: Database, config, callb
     if not bank:
         return
     bank_text = await format_bank_text(bank_name=bank["bank_name"], bank_desc=bank["bank_description"])
-    reply_markup = await ImagePaginator.create_keyboard(cur_page=cur_page, amount_of_pages=amount_of_pages,
+    reply_markup = await ImagePaginator.create_keyboard(cur_bank=bank,
+                                                        cur_page=cur_page, amount_of_pages=amount_of_pages,
                                                         for_role="admin")
     await cq.message.edit_media(InputMedia(media=bank["bank_photo"], caption=bank_text),
                                 reply_markup=reply_markup)
