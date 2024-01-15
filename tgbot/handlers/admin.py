@@ -7,7 +7,7 @@ from aiogram.dispatcher.filters import Command
 
 from tgbot.config import Config
 from tgbot.keyboards.callback_datas import adm_act_callback, adm_bank_navg
-from tgbot.misc.misc_commands import format_channel_link
+from tgbot.misc.misc_functions import format_channel_link, format_bank_text, smart_message_interaction_photo
 from tgbot.misc.states import AdminStates
 from tgbot.models.channel_interactions import ChannelInteractions
 from tgbot.models.image_paginator import ImagePaginator
@@ -19,7 +19,7 @@ async def open_admin_main_menu(target: Union[types.CallbackQuery, types.Message]
     reply_markup = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="Добавить новый банк",
                               callback_data=adm_act_callback.new(act="add_new_bank"))],
-        [InlineKeyboardButton(text="Карусель займов",
+        [InlineKeyboardButton(text="Бесплатные займы",
                               callback_data=adm_bank_navg.new(act="adm_bank_carousel",
                                                               c_p="1",
                                                               menu="bank_preview"))],
@@ -160,12 +160,6 @@ async def get_unknown_content(message):
                          reply_markup=back_to_main_menu)
 
 
-async def format_bank_text(bank_name, bank_desc):
-    bank_text = f"{bank_name}\n\n" \
-                f"{bank_desc}"
-    return bank_text
-
-
 async def adm_bank_carousel(cq: types.CallbackQuery, db: Database, config, callback_data):
     cur_page = int(callback_data["c_p"])
     act = callback_data["act"]
@@ -179,15 +173,19 @@ async def adm_bank_carousel(cq: types.CallbackQuery, db: Database, config, callb
         cur_page = amount_of_pages
     if cur_page > amount_of_pages:
         cur_page = 1
-    bank = await db.select_bank_offset(offset=cur_page)
+
+    bank = await db.select_bank_offset(telegram_id=cq.from_user.id, offset=cur_page)
     if not bank:
         return
-    bank_text = await format_bank_text(bank_name=bank["bank_name"], bank_desc=bank["bank_description"])
+
+    bank_text = await format_bank_text(bank=bank)
     reply_markup = await ImagePaginator.create_keyboard(cur_bank=bank,
                                                         cur_page=cur_page, amount_of_pages=amount_of_pages,
                                                         for_role="admin")
-    await cq.message.edit_media(InputMedia(media=bank["bank_photo"], caption=bank_text),
-                                reply_markup=reply_markup)
+    await smart_message_interaction_photo(target=cq,
+                                          reply_markup=reply_markup,
+                                          msg_text=bank_text,
+                                          media_file_id=bank["bank_photo"])
 
 
 def register_admin(dp: Dispatcher):

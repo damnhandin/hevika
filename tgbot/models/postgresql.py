@@ -47,12 +47,15 @@ class Database:
         """
         await self.execute(sql, execute=True)
 
+
+
     async def create_table_user_banks(self):
         sql = """
         CREATE TABLE IF NOT EXISTS user_banks (
         user_telegram_id INT REFERENCES users(telegram_id) ON DELETE NO ACTION ON UPDATE CASCADE,
         bank_id INT REFERENCES banks(bank_id) ON DELETE CASCADE ON UPDATE CASCADE,
-        status INT NOT NULL
+        fav_status BOOL NOT NULL,
+        tag_status BOOL NOT NULL
         );
         """
         await self.execute(sql, execute=True)
@@ -60,6 +63,22 @@ class Database:
     async def add_post_to_bd(self, bank_id, channel_id, post_id):
         sql = "INSERT INTO bank_posts (bank_id, channel_id, post_id) VALUES ($1, $2, $3);"
         await self.execute(sql, bank_id, channel_id, post_id, execute=True)
+
+    async def select_user_fav_bank(self, telegram_id, offset=0):
+        offset = offset - 1
+        if offset < 0:
+            offset = 0
+        sql = "SELECT * FROM banks INNER JOIN user_banks USING(bank_id) " \
+              "WHERE user_telegram_id=$1 AND fav_status=True OFFSET $2;"
+        return await self.execute(sql, telegram_id, offset, fetchrow=True)
+
+    async def select_user_tag_bank(self, telegram_id, offset=0):
+        offset = offset - 1
+        if offset < 0:
+            offset = 0
+        sql = "SELECT * FROM banks INNER JOIN user_banks USING(bank_id) " \
+              "WHERE user_telegram_id=$1 AND tag_status=True OFFSET $2;"
+        return await self.execute(sql, telegram_id, offset, fetchrow=True)
 
     async def select_bank_by_id(self, bank_id):
         sql = "SELECT * FROM banks WHERE bank_id=$1;"
@@ -69,15 +88,25 @@ class Database:
         sql = "SELECT * FROM users WHERE telegram_id=$1;"
         return await self.execute(sql, telegram_id, fetchrow=True)
 
-    async def count_amount_of_bank_pages(self):
+    async def count_amount_of_bank_pages(self, *args):
         return await self.execute("SELECT COUNT(*) FROM banks", fetchval=True) or 1
 
-    async def select_bank_offset(self, offset):
+    async def count_amount_of_user_banks_fav(self, user_tg_id):
+        return await self.execute("SELECT COUNT(*) FROM banks INNER JOIN user_banks USING(bank_id) "
+                                  "WHERE user_telegram_id=$1 AND fav_status=True", user_tg_id, fetchval=True) or 1
+
+    async def count_amount_of_user_banks_tag(self, user_tg_id):
+        return await self.execute("SELECT COUNT(*) FROM banks INNER JOIN user_banks USING(bank_id) "
+                                  "WHERE user_telegram_id=$1 AND tag_status=True", user_tg_id,
+                                  fetchval=True) or 1
+
+    async def select_bank_offset(self, telegram_id, offset):
         offset = offset - 1
         if offset < 0:
             offset = 0
-        sql = "SELECT * FROM banks OFFSET $1"
-        return await self.execute(sql, offset, fetchrow=True)
+        sql = "SELECT banks.*, user_banks.fav_status, user_banks.tag_status FROM banks " \
+              "LEFT JOIN user_banks ON user_banks.user_telegram_id=$2 AND banks.bank_id = user_banks.bank_id OFFSET $1"
+        return await self.execute(sql, offset, telegram_id, fetchrow=True)
 
     async def add_user(self, username, first_name, last_name, full_name, telegram_id):
         registration_date = datetime.now()
@@ -89,21 +118,34 @@ class Database:
         await self.execute(sql, username, first_name, last_name, full_name, registration_date, telegram_id,
                            execute=True)
 
-    async def user_add_or_delete_bank_to_favorites(self, telegram_id, bank_id):
+    async def select_user_bank_full(self, telegram_id, bank_id):
+        sql = "SELECT banks.*, user_banks.fav_status, user_banks.tag_status FROM banks " \
+              "LEFT JOIN user_banks ON banks.bank_id = user_banks.bank_id " \
+              "WHERE banks.bank_id=$1 AND user_banks.user_telegram_id=$2;"
+        return await self.execute(sql, bank_id, telegram_id, fetchrow=True)
+
+    async def user_edit_user_bank_status(self, telegram_id, bank_id, status_str, status):
         async with self._transaction(isolation="serializable") as connection:
-            sql = """
+            bank = await connection.fetchrow("SELECT * FROM banks WHERE bank_id=$1;", bank_id)
+            if not bank:
+                return bank
+            bank_sql = """
             SELECT * FROM user_banks 
             WHERE user_telegram_id=$1 AND bank_id=$2
             FOR UPDATE;"""
-            bank = await connection.fetchrow(sql, telegram_id, bank_id)
-            res = None
-            if bank is None:
-                sql = "INSERT INTO user_banks (user_telegram_id, bank_id, status) VALUES ($1, $2, 1) RETURNING *;"
-                res = await connection.fetchrow(sql, telegram_id, bank_id)
-            elif bank.get("status") == 1:
-                sql = "DELETE FROM user_banks WHERE user_telegram_id=$1 AND bank_id=$2"
+            bank = await connection.fetchrow(bank_sql, telegram_id, bank_id)
+            if not bank:
+                sql = "INSERT INTO user_banks (user_telegram_id, bank_id, fav_status, tag_status) " \
+                      "VALUES ($1, $2, False, False);"
                 await connection.execute(sql, telegram_id, bank_id)
-            return res
+            sql = f"UPDATE user_banks SET {status_str}=$1 WHERE user_telegram_id=$2 AND bank_id=$3;"
+            await connection.execute(sql, status, telegram_id, bank_id)
+            sql = "SELECT banks.*, user_banks.fav_status, user_banks.tag_status FROM banks " \
+                  "LEFT JOIN user_banks ON banks.bank_id = user_banks.bank_id " \
+                  "WHERE banks.bank_id=$1 AND user_banks.user_telegram_id=$2;"
+            full_bank = await connection.fetchrow(sql, bank_id, telegram_id)
+
+        return full_bank
 
     async def add_bank(self, bank_name, bank_description, bank_photo, bank_url):
         sql = "INSERT INTO banks (bank_name, bank_description, bank_photo, bank_url) " \

@@ -57,9 +57,8 @@ async def main():
     bot = Bot(token=config.tg_bot.token, parse_mode='HTML')
     dp = Dispatcher(bot, storage=storage)
     db = Database(config)
-    await start_db(db)
     bot['config'] = config
-
+    await start_db(db)
     register_all_middlewares(dp, db, config)
     register_all_filters(dp)
     register_all_handlers(dp)
