@@ -9,14 +9,20 @@ async def format_channel_link(channel_tag):
     return f"https://www.t.me/{channel_tag}"
 
 
-async def format_bank_text(bank):
+async def format_bank_text(bank, bank_rating):
     if not bank:
         return "Для взаимодействия используйте кнопки снизу 👇"
     bank_name = bank["bank_name"]
     bank_desc = bank["bank_description"]
+    if bank_rating == 0:
+        rating_text = "Без рейтинга ⭐️"
+    else:
+        rating_text = f"Рейтинг: {bank_rating:0.1f} / 5.0 ⭐️"
 
     bank_text = f"{bank_name}\n\n" \
-                f"{bank_desc}"
+                f"{bank_desc}\n\n" \
+                f"{rating_text}"
+
     return bank_text
 
 
@@ -35,6 +41,10 @@ async def smart_message_interaction_photo(target: Union[types.Message, types.Cal
             if media_file:
                 await target.message.answer_photo(photo=media_file.media, caption=media_file.caption,
                                                   reply_markup=reply_markup)
+                try:
+                    await target.message.delete_reply_markup()
+                except:
+                    pass
             else:
                 await target.message.edit_text(text=msg_text,
                                                reply_markup=reply_markup)
@@ -50,9 +60,17 @@ async def smart_message_interaction_photo(target: Union[types.Message, types.Cal
                         photo=media_file.media,
                         caption=msg_text,
                         reply_markup=reply_markup)
+                    try:
+                        await target.message.delete_reply_markup()
+                    except:
+                        pass
             else:
                 await target.message.answer(text=msg_text,
                                             reply_markup=reply_markup)
+                try:
+                    await target.message.delete_reply_markup()
+                except:
+                    pass
             return
     else:
         target: types.Message

@@ -148,7 +148,8 @@ async def adm_confirm_bank_creation(cq: types.CallbackQuery, db: Database, state
         await ChannelInteractions.add_bank_to_channel(bot=cq.bot,
                                                       bank_id=bank["bank_id"],
                                                       db=db,
-                                                      channel_id=channel)
+                                                      channel_id=channel,
+                                                      bot_tag=config.tg_bot.bot_name)
     await cq.message.edit_caption(caption="Банк был успешно создан!", reply_markup=back_to_main_menu)
 
 
@@ -177,8 +178,8 @@ async def adm_bank_carousel(cq: types.CallbackQuery, db: Database, config, callb
     bank = await db.select_bank_offset(telegram_id=cq.from_user.id, offset=cur_page)
     if not bank:
         return
-
-    bank_text = await format_bank_text(bank=bank)
+    bank_rating = await db.calculate_bank_rating(bank["bank_id"])
+    bank_text = await format_bank_text(bank=bank, bank_rating=bank_rating)
     reply_markup = await ImagePaginator.create_keyboard(cur_bank=bank,
                                                         cur_page=cur_page, amount_of_pages=amount_of_pages,
                                                         for_role="admin")

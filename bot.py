@@ -11,6 +11,7 @@ from tgbot.handlers.admin import register_admin
 from tgbot.handlers.echo import register_echo
 from tgbot.handlers.user import register_user
 from tgbot.middlewares.environment import EnvironmentMiddleware
+from tgbot.middlewares.off_watcher import OffWatchesMiddleware
 from tgbot.models.postgresql import Database
 
 logger = logging.getLogger(__name__)
@@ -18,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 def register_all_middlewares(dp, db, config):
     dp.setup_middleware(EnvironmentMiddleware(db=db, config=config))
-
+    dp.setup_middleware(OffWatchesMiddleware())
 
 def register_all_filters(dp):
     dp.filters_factory.bind(AdminFilter)
@@ -37,13 +38,14 @@ async def start_db(db: Database):
     # await db.drop_table_bank_posts()
     # await db.drop_table_banks()
     # await db.drop_table_user_banks()
+    # await db.drop_table_user_bank_ratings()
 
     # CREATE TABLE
     await db.create_table_users()
     await db.create_table_banks()
     await db.create_table_bank_posts()
     await db.create_table_user_banks()
-
+    await db.create_table_user_bank_ratings()
 
 async def main():
     logging.basicConfig(
