@@ -45,9 +45,9 @@ class ImagePaginator:
 
     @classmethod
     async def create_interactions_keyboard(cls, for_role, cur_bank, cur_page, menu):
-        interaction_arr = []
+        interaction_arr = tuple()
         if for_role == "admin":
-            interaction_arr += [
+            interaction_arr += (
                 [InlineKeyboardButton(text="Изменить описание",
                                       callback_data=admbank_inter.new(
                                           act="adm_chng_desc",
@@ -76,49 +76,51 @@ class ImagePaginator:
                                           c_p=cur_page,
                                           menu=menu
                                       ))],
-            ]
+            )
         else:
+            bank_url_button = InlineKeyboardButton(text="Забрать прямо сейчас",
+                                                   url=cur_bank["bank_url"])
             if cur_bank.get("fav_status"):
-                favorite_button = [InlineKeyboardButton(text="❌ Убрать из избранного",
+                favorite_button = InlineKeyboardButton(text="❌ Убрать из избранного",
                                                        callback_data=bank_inter.new(
                                                            act="del_fav",
                                                            bid=cur_bank["bank_id"],
                                                            c_p=cur_page,
                                                            menu=menu
-                                                       ))]
+                                                       ))
             else:
-                favorite_button = [InlineKeyboardButton(text="✅ Добавить в избранное",
+                favorite_button = InlineKeyboardButton(text="✅ Добавить в избранное",
                                                        callback_data=bank_inter.new(
                                                            act="add_fav",
                                                            bid=cur_bank["bank_id"],
                                                            c_p=cur_page,
                                                            menu=menu
-                                                       ))]
+                                                       ))
 
             if cur_bank.get("tag_status"):
-                tag_button = [InlineKeyboardButton(text="❌ Убрать отметку",
+                tag_button = InlineKeyboardButton(text="❌ Убрать отметку",
                                                   callback_data=bank_inter.new(
                                                       act="del_tag",
                                                       bid=cur_bank["bank_id"],
                                                       c_p=cur_page,
                                                       menu=menu
-                                                  ))]
+                                                  ))
             else:
-                tag_button = [InlineKeyboardButton(text="🔷 Отметить",
+                tag_button = InlineKeyboardButton(text="🔷 Отметить",
                                                   callback_data=bank_inter.new(
                                                       act="add_tag",
                                                       bid=cur_bank["bank_id"],
                                                       c_p=cur_page,
                                                       menu=menu
-                                                  ))]
-            rating_button = [InlineKeyboardButton(text="Поставить оценку ⭐️",
+                                                  ))
+            rating_button = InlineKeyboardButton(text="Поставить оценку ⭐️",
                                                  callback_data=bank_inter.new(
                                                      act="set_rate",
                                                      bid=cur_bank["bank_id"],
                                                      c_p=cur_page,
                                                      menu=menu
-                                                 ))]
-            interaction_arr += [favorite_button, tag_button, rating_button]
+                                                 ))
+            interaction_arr += ([bank_url_button], [favorite_button, tag_button], [rating_button])
 
         return interaction_arr
 

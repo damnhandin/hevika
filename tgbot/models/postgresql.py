@@ -1,8 +1,10 @@
 import contextlib
+from asyncio import exceptions
 from datetime import datetime
 from typing import Optional, AsyncIterator
 
 import asyncpg
+from asyncpg import UniqueViolationError
 
 from tgbot.config import Config
 
@@ -150,8 +152,18 @@ class Database:
         $1, $2, $3, $4, $5, $6
         );
         """
-        await self.execute(sql, username, first_name, last_name, full_name, registration_date, telegram_id,
-                           execute=True)
+        try:
+            await self.execute(sql, username, first_name, last_name, full_name, registration_date, telegram_id,
+                               execute=True)
+        except UniqueViolationError:
+            sql = """
+            UPDATE users SET 
+            username=$1, first_name=$2, last_name=$3, full_name=$4, registration_date=$5
+            WHERE telegram_id=%6
+            );
+            """
+            await self.execute(sql, username, first_name, last_name, full_name, registration_date, telegram_id,
+                               execute=True)
 
     async def select_user_bank_full(self, telegram_id, bank_id):
         sql = "SELECT banks.*, user_banks.fav_status, user_banks.tag_status FROM banks " \
