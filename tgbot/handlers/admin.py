@@ -157,7 +157,7 @@ async def adm_confirm_bank_creation(cq: types.CallbackQuery, db: Database, state
                                                       channel_id=channel,
                                                       bot_tag=config.tg_bot.bot_name)
 
-    bank_text = await format_bank_text(bank, bank_rating=bank_rating)
+    bank_text = await format_bank_text(bank, bank_rating=bank_rating, is_notification=True)
     cur_page = await db.calculate_offset_of_bank(bank_id=bank["bank_id"])
     amount_of_banks = await db.count_amount_of_bank_pages()
     reply_markup = await ImagePaginator.create_keyboard(cur_bank=bank,

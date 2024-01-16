@@ -3,13 +3,19 @@ from typing import Union
 from aiogram import types
 from aiogram.types import InputMedia
 from aiogram.utils.exceptions import MessageNotModified
+import aiogram.utils.markdown as fmt
 
 
 async def format_channel_link(channel_tag):
     return f"https://www.t.me/{channel_tag}"
 
 
-async def format_bank_text(bank, bank_rating):
+async def format_bank_text(bank, bank_rating, is_notification=False):
+    if is_notification is True:
+        bank_text = fmt.hbold("Появились новые возможности! 🎉\n\n")
+    else:
+        bank_text = ""
+
     if not bank:
         return "Для взаимодействия используйте кнопки снизу 👇"
     bank_name = bank["bank_name"]
@@ -19,9 +25,9 @@ async def format_bank_text(bank, bank_rating):
     else:
         rating_text = f"Рейтинг: {bank_rating:0.1f} / 5.0 ⭐️"
 
-    bank_text = f"{bank_name}\n\n" \
-                f"{bank_desc}\n\n" \
-                f"{rating_text}"
+    bank_text += f"{bank_name}\n\n" \
+                 f"{bank_desc}\n\n" \
+                 f"{rating_text}"
 
     return bank_text
 
