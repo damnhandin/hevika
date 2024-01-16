@@ -12,6 +12,8 @@ class AdminFilter(BoundFilter):
         self.is_admin = is_admin
 
     async def check(self, obj):
+        if not obj:
+            return False
         if self.is_admin is None:
             return False
         config: Config = obj.bot.get('config')

@@ -47,6 +47,7 @@ async def start_db(db: Database):
     await db.create_table_user_banks()
     await db.create_table_user_bank_ratings()
 
+
 async def main():
     logging.basicConfig(
         level=logging.INFO,

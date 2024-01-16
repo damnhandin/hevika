@@ -9,9 +9,11 @@ from tgbot.config import Config
 from tgbot.keyboards.callback_datas import adm_act_callback, adm_bank_navg
 from tgbot.misc.misc_functions import format_channel_link, format_bank_text, smart_message_interaction_photo
 from tgbot.misc.states import AdminStates
+from tgbot.models import image_paginator
 from tgbot.models.channel_interactions import ChannelInteractions
 from tgbot.models.image_paginator import ImagePaginator
 from tgbot.models.postgresql import Database
+from tgbot.models.users_notification import UsersNotificator
 
 
 async def open_admin_main_menu(target: Union[types.CallbackQuery, types.Message], config: Config):
@@ -30,29 +32,31 @@ async def open_admin_main_menu(target: Union[types.CallbackQuery, types.Message]
             await target.message.answer_photo(
                 photo=config.misc.main_photo,
                 caption=f"Привет, {target.from_user.full_name}!\n"
-                        f"Для взаимодействия используй кнопки снизу 👇",
+                        f"Для взаимодействия используйте кнопки снизу 👇",
                 reply_markup=reply_markup)
         else:
             await target.message.edit_media(media=InputMedia(media=config.misc.main_photo,
                                                              caption=f"Привет, {target.from_user.full_name}!\n"
-                                                                     f"Для взаимодействия используй кнопки снизу 👇"),
+                                                                     f"Для взаимодействия используйте кнопки снизу 👇"),
                                             reply_markup=reply_markup)
 
     elif isinstance(target, types.Message):
         await target.answer_photo(photo=config.misc.main_photo,
                                   caption=f"Привет, {target.from_user.full_name}!\n"
-                                          f"Для взаимодействия используй кнопки снизу 👇",
+                                          f"Для взаимодействия используйте кнопки снизу 👇",
                                   reply_markup=reply_markup
                                   )
     else:
         print(f"Новый type попал в объект main menu target = {target}")
 
 
-async def admin_main_menu(cq: types.CallbackQuery, config):
+async def admin_main_menu(cq: types.CallbackQuery, state, config):
+    await state.reset_state()
     await open_admin_main_menu(cq, config)
 
 
-async def admin_start(message: Message, config: Config):
+async def admin_start(message: Message, config: Config, state):
+    await state.reset_state()
     await open_admin_main_menu(message, config)
 
 
@@ -144,13 +148,28 @@ async def adm_confirm_bank_creation(cq: types.CallbackQuery, db: Database, state
                             bank_description=data["bank_desc"],
                             bank_photo=data["photo_file_id"],
                             bank_url=data["bank_url"])
+    bank_rating = await db.calculate_bank_rating(bank_id=bank["bank_id"])
+    # generating notification message for users
     for channel in config.tg_bot.channels:
         await ChannelInteractions.add_bank_to_channel(bot=cq.bot,
                                                       bank_id=bank["bank_id"],
                                                       db=db,
                                                       channel_id=channel,
                                                       bot_tag=config.tg_bot.bot_name)
+
+    bank_text = await format_bank_text(bank, bank_rating=bank_rating)
+    cur_page = await db.calculate_offset_of_bank(bank_id=bank["bank_id"])
+    amount_of_banks = await db.count_amount_of_bank_pages()
+    reply_markup = await ImagePaginator.create_keyboard(cur_bank=bank,
+                                                        cur_page=cur_page,
+                                                        amount_of_pages=amount_of_banks,
+                                                        for_role="user",
+                                                        menu="bank_preview")
     await cq.message.edit_caption(caption="Банк был успешно создан!", reply_markup=back_to_main_menu)
+    msg_to_send = await cq.message.answer_photo(caption=bank_text, photo=bank["bank_photo"],
+                                                reply_markup=reply_markup)
+    users = await db.select_all_users()
+    await UsersNotificator.send_smart_message_to_user(message=msg_to_send, users=users)
 
 
 async def get_unknown_content(message):

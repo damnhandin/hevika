@@ -75,23 +75,31 @@ class Database:
         sql = "INSERT INTO bank_posts (bank_id, channel_id, post_id) VALUES ($1, $2, $3);"
         await self.execute(sql, bank_id, channel_id, post_id, execute=True)
 
+    async def select_all_users(self):
+        return await self.execute("SELECT * FROM users;", fetch=True)
+
     async def select_user_fav_bank(self, telegram_id, offset=0):
         offset = offset - 1
         if offset < 0:
             offset = 0
         sql = "SELECT * FROM banks INNER JOIN user_banks USING(bank_id) " \
-              "WHERE user_telegram_id=$1 AND fav_status=True OFFSET $2;"
+              "WHERE user_telegram_id=$1 AND fav_status=True ORDER BY bank_id ASC OFFSET $2;"
         return await self.execute(sql, telegram_id, offset, fetchrow=True)
 
-    async def count_offset_of_bank(self, bank_id):
-        return await self.execute("SELECT COUNT(*) FROM banks WHERE bank_id<$1", bank_id, fetchval=True)
+    async def calculate_offset_of_bank(self, bank_id):
+        sql = """
+        SELECT COUNT(t.*) FROM (
+        SELECT * FROM banks WHERE bank_id<=$1 ORDER BY bank_id) as t;
+        """
+        return await self.execute(sql,
+                                  bank_id, fetchval=True)
 
     async def select_user_tag_bank(self, telegram_id, offset=0):
         offset = offset - 1
         if offset < 0:
             offset = 0
         sql = "SELECT * FROM banks INNER JOIN user_banks USING(bank_id) " \
-              "WHERE user_telegram_id=$1 AND tag_status=True OFFSET $2;"
+              "WHERE user_telegram_id=$1 AND tag_status=True ORDER BY bank_id ASC OFFSET $2;"
         return await self.execute(sql, telegram_id, offset, fetchrow=True)
 
     async def select_bank_by_id(self, bank_id):
@@ -142,7 +150,8 @@ class Database:
         if offset < 0:
             offset = 0
         sql = "SELECT banks.*, user_banks.fav_status, user_banks.tag_status FROM banks " \
-              "LEFT JOIN user_banks ON user_banks.user_telegram_id=$2 AND banks.bank_id = user_banks.bank_id OFFSET $1"
+              "LEFT JOIN user_banks ON user_banks.user_telegram_id=$2 AND banks.bank_id = user_banks.bank_id " \
+              "ORDER BY banks.bank_id ASC OFFSET $1"
         return await self.execute(sql, offset, telegram_id, fetchrow=True)
 
     async def add_user(self, username, first_name, last_name, full_name, telegram_id):
@@ -168,7 +177,8 @@ class Database:
     async def select_user_bank_full(self, telegram_id, bank_id):
         sql = "SELECT banks.*, user_banks.fav_status, user_banks.tag_status FROM banks " \
               "LEFT JOIN user_banks ON banks.bank_id = user_banks.bank_id " \
-              "WHERE banks.bank_id=$1 AND user_banks.user_telegram_id=$2;"
+              "WHERE banks.bank_id=$1 AND user_banks.user_telegram_id=$2" \
+              "ORDER BY banks.bank_id ASC;"
         return await self.execute(sql, bank_id, telegram_id, fetchrow=True)
 
     async def user_edit_user_bank_status(self, telegram_id, bank_id, status_str, status):
@@ -189,7 +199,8 @@ class Database:
             await connection.execute(sql, status, telegram_id, bank_id)
             sql = "SELECT banks.*, user_banks.fav_status, user_banks.tag_status FROM banks " \
                   "LEFT JOIN user_banks ON banks.bank_id = user_banks.bank_id " \
-                  "WHERE banks.bank_id=$1 AND user_banks.user_telegram_id=$2;"
+                  "WHERE banks.bank_id=$1 AND user_banks.user_telegram_id=$2 " \
+                  "ORDER BY banks.bank_id ASC;"
             full_bank = await connection.fetchrow(sql, bank_id, telegram_id)
 
         return full_bank

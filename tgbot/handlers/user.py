@@ -29,14 +29,14 @@ async def open_user_main_menu(target: Union[types.CallbackQuery, types.Message],
         [InlineKeyboardButton(text="Показать все бесплатные займы",
                               url=link)]
     ])
-    text = f"Приветствую тебя, {target.from_user.full_name}! 👋\n"\
-           f"Я помогу тебе найти беспроцентные займы в пару кликов! 😉\n\n"\
-           "Для взаимодействия используй кнопки снизу 👇"
-    await smart_message_interaction_photo(target=target, msg_text=text, reply_markup=reply_markup,
-                                          media_file_id=config.misc.main_photo)
+    text = f"Приветствую вас, {target.from_user.full_name}! 👋\n"\
+           f"Я помогу вам найти беспроцентные займы в пару кликов! 😉\n\n"\
+           "Для взаимодействия используйте кнопки снизу 👇"
+    await smart_message_interaction_photo(target=target, msg_text=text, reply_markup=reply_markup)
 
 
-async def user_main_menu(cq, config, db):
+async def user_main_menu(cq, config, state, db):
+    await state.reset_state()
     user = await db.select_user_tg_id(telegram_id=cq.from_user.id)
     tg_user = cq.from_user
     if not user:
@@ -48,7 +48,8 @@ async def user_main_menu(cq, config, db):
     await open_user_main_menu(cq, config)
 
 
-async def user_start(message: Message, db: Database, config: Config):
+async def user_start(message: Message, db: Database, config: Config, state):
+    await state.reset_state()
     user = await db.select_user_tg_id(telegram_id=message.from_user.id)
     tg_user = message.from_user
     if not user:
@@ -69,7 +70,7 @@ async def user_start(message: Message, db: Database, config: Config):
         return
     bank_rating = await db.calculate_bank_rating(bank_id=bank["bank_id"])
     bank_text = await format_bank_text(bank=bank, bank_rating=bank_rating)
-    cur_page = await db.count_offset_of_bank(bank_id=bank["bank_id"])
+    cur_page = await db.calculate_offset_of_bank(bank_id=bank["bank_id"])
     amount_of_pages = await db.count_amount_of_bank_pages()
     reply_markup = await ImagePaginator.create_keyboard(cur_bank=bank,
                                                         cur_page=cur_page,
@@ -309,6 +310,7 @@ async def user_finish_rate_bank(cq, db, callback_data, config):
     else:
         await cq.message.answer(text=f"Вы успешно поставили оценку {rate_number} ⭐️!!!",
                                 reply_markup=back_to_main_menu)
+        await cq.message.delete_reply_markup()
 
 
 def register_user(dp: Dispatcher):

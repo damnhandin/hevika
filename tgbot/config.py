@@ -54,6 +54,6 @@ def load_config(path: str = None):
             database=env.str('DB_NAME')
         ),
         misc=Miscellaneous(
-            main_photo="AgACAgIAAxkBAAPYZaKG1eSly_2gkH58z44iQ-SMPOIAAo_SMRtMIBlJKk4PztQ4LIABAAMCAANtAAM0BA"
+            main_photo="AgACAgIAAxkBAAIEb2Wmf1GJHOkJbSO4RE_Z4hYIxh3PAAJd1zEbAAECMEmxhV3ay1twGgEAAwIAA3kAAzQE"
         )
     )
