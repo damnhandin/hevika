@@ -5,7 +5,7 @@ from aiogram import Bot, Dispatcher
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.contrib.fsm_storage.redis import RedisStorage2
 
-from tgbot.config import load_config
+from tgbot.config import load_config, Config
 from tgbot.filters.admin import AdminFilter
 from tgbot.handlers.admin import register_admin
 from tgbot.handlers.echo import register_echo
@@ -33,13 +33,14 @@ def register_all_handlers(dp):
     register_echo(dp)
 
 
-async def start_db(db: Database):
-    # DROP TABLE
-    # await db.drop_table_user_bank_ratings()
-    # await db.drop_table_user_banks()
-    # await db.drop_table_users()
-    # await db.drop_table_bank_posts()
-    # await db.drop_table_banks()
+async def start_db(db: Database, config: Config):
+    if config.tg_bot.full_drop_db:
+        # DROP TABLE
+        await db.drop_table_user_bank_ratings()
+        await db.drop_table_user_banks()
+        await db.drop_table_users()
+        await db.drop_table_bank_posts()
+        await db.drop_table_banks()
 
     # CREATE TABLE
     await db.create_table_users()
@@ -62,7 +63,7 @@ async def main():
     dp = Dispatcher(bot, storage=storage)
     db = Database(config)
     bot['config'] = config
-    await start_db(db)
+    await start_db(db, config)
     register_all_middlewares(dp, db, config)
     register_all_filters(dp)
     register_all_handlers(dp)

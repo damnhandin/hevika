@@ -57,9 +57,9 @@ async def smart_message_interaction_photo(target: Union[types.Message, types.Cal
         if media_file:
             await target.answer_photo(photo=media_file.media, caption=media_file.caption,
                                       reply_markup=reply_markup)
-
-        await target.answer(text=msg_text,
-                            reply_markup=reply_markup)
+        else:
+            await target.answer(text=msg_text,
+                                reply_markup=reply_markup)
 
     return
 

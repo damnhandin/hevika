@@ -19,6 +19,7 @@ class TgBot:
     use_redis: bool
     bot_name: str
     channel_tag: str
+    full_drop_db: bool
 
 
 @dataclass
@@ -34,6 +35,7 @@ class Config:
     misc: Miscellaneous
 
 
+
 def load_config(path: str = None):
     env = Env()
     env.read_env(path)
@@ -45,7 +47,8 @@ def load_config(path: str = None):
             channels=list(map(int, env.list("CHANNELS"))),
             use_redis=env.bool("USE_REDIS"),
             bot_name=env.str("BOT_NAME"),
-            channel_tag=env.str("CHANNEL_TAG")
+            channel_tag=env.str("CHANNEL_TAG"),
+            full_drop_db=env.bool("FULL_DROP_DB")
         ),
         db=DbConfig(
             host=env.str('DB_HOST'),
