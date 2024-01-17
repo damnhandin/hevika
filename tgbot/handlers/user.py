@@ -13,7 +13,6 @@ from tgbot.models.postgresql import Database
 
 
 async def open_user_main_menu(target: Union[types.CallbackQuery, types.Message], config: Config):
-    print(2)
     if config.misc.main_photo:
         main_photo = config.misc.main_photo
     else:

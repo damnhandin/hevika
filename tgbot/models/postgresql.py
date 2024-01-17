@@ -177,7 +177,6 @@ class Database:
     async def update_bank_menu(self, bank_id, *args):
         if len(args) > 2:
             return
-        print(args)
         data = args[0   ]
         act = data["act"]
         # bank_name, bank_description, bank_photo, bank_url
@@ -197,7 +196,6 @@ class Database:
             return
         text = " AND ".join([f"{key}='{value}'" for key, value in query.items()])
         sql = f"UPDATE banks SET {text} WHERE bank_id=$1;"
-        print(sql)
         async with self._transaction(isolation="serializable") as connection:
             await connection.execute(sql, bank_id)
 
