@@ -45,8 +45,8 @@ async def smart_message_interaction_photo(target: Union[types.Message, types.Cal
         if target.message.content_type == ContentType.TEXT:
             if media_file:
                 try:
-                    print(2)
                     await target.message.answer_photo(photo=media_file.media,
+                                                      caption=media_file.caption,
                                                       reply_markup=reply_markup)
                 except Exception as exc:
                     logging.info(f"{exc}", exc_info=True)
@@ -70,6 +70,7 @@ async def smart_message_interaction_photo(target: Union[types.Message, types.Cal
                     logging.info(f"{exc}", exc_info=True)
                     try:
                         await target.message.answer_photo(photo=media_file.media,
+                                                          caption=media_file.caption,
                                                           reply_markup=reply_markup)
                     except:
                         await target.message.answer(text=msg_text,
@@ -84,6 +85,7 @@ async def smart_message_interaction_photo(target: Union[types.Message, types.Cal
                 except Exception as exc:
                     logging.info(f"{exc}", exc_info=True)
                     await target.message.answer_photo(photo=media_file.media,
+                                                      caption=media_file.caption,
                                                       reply_markup=reply_markup)
             else:
                 await target.message.answer(text=msg_text,
