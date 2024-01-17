@@ -108,7 +108,8 @@ async def user_bank_carousel(cq: types.CallbackQuery, db: Database, callback_dat
         ])
         await smart_message_interaction_photo(target=cq,
                                               msg_text="Список пуст, попробуйте что-нибудь сюда добавить 👍",
-                                              reply_markup=back_to_main_menu)
+                                              reply_markup=back_to_main_menu,
+                                              media_file_id=bank["bank_photo"])
         return
     bank_rating = await db.calculate_bank_rating(bank_id=bank["bank_id"])
     bank_text = await format_bank_text(bank=bank, bank_rating=bank_rating)

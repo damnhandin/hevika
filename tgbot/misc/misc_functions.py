@@ -1,3 +1,4 @@
+import logging
 from typing import Union
 
 from aiogram import types
@@ -39,24 +40,50 @@ async def smart_message_interaction_photo(target: Union[types.Message, types.Cal
         media_file = InputMedia(media=media_file_id, caption=msg_text)
     else:
         media_file = None
-
     if isinstance(target, types.CallbackQuery):
         target: types.CallbackQuery
         if target.message.content_type == ContentType.TEXT:
-            try:
-                await target.message.answer_photo(photo=media_file,
-                                                  reply_markup=reply_markup)
-            except Exception as exc:
-                print(exc)
-                await target.message.answer(text=msg_text,
-                                            reply_markup=reply_markup)
+            if media_file:
+                try:
+                    print(2)
+                    await target.message.answer_photo(photo=media_file.media,
+                                                      reply_markup=reply_markup)
+                except Exception as exc:
+                    logging.info(f"{exc}", exc_info=True)
+                    try:
+                        await target.message.edit_text(text=msg_text,
+                                                       reply_markup=reply_markup)
+                    except MessageNotModified:
+                        pass
+                    except Exception as exc:
+                        logging.info(f"{exc}", exc_info=True)
+
+                        await target.message.answer(text=msg_text,
+                                                    reply_markup=reply_markup)
+            else:
+                try:
+                    await target.message.edit_text(text=msg_text,
+                                                   reply_markup=reply_markup)
+                except MessageNotModified:
+                    pass
+                except Exception as exc:
+                    logging.info(f"{exc}", exc_info=True)
+                    try:
+                        await target.message.answer_photo(photo=media_file.media,
+                                                          reply_markup=reply_markup)
+                    except:
+                        await target.message.answer(text=msg_text,
+                                                    reply_markup=reply_markup)
         else:
             if media_file:
                 try:
                     await target.message.edit_media(media=media_file,
                                                     reply_markup=reply_markup)
-                except:
-                    await target.message.answer_photo(photo=media_file,
+                except MessageNotModified:
+                    pass
+                except Exception as exc:
+                    logging.info(f"{exc}", exc_info=True)
+                    await target.message.answer_photo(photo=media_file.media,
                                                       reply_markup=reply_markup)
             else:
                 await target.message.answer(text=msg_text,
