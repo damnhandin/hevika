@@ -174,14 +174,32 @@ class Database:
             await self.execute(sql, username, first_name, last_name, full_name, registration_date, telegram_id,
                                execute=True)
 
-    async def update_bank_menu(self, *args):
+    async def update_bank_menu(self, bank_id, *args):
+        if len(args) > 2:
+            return
         print(args)
-        for name, value in globals().items():
-            if value is not None:
-                print(value)
+        data = args[0   ]
+        act = data["act"]
+        # bank_name, bank_description, bank_photo, bank_url
+        query = None
+        if act == "adm_chng_name":
+            query = {"bank_name": data["bank_name"]}
 
-        sql = ""
-        await self.execute(sql, )
+        elif act == "adm_chng_photo":
+            query = {"bank_photo": data["bank_photo"]}
+
+        elif act == "adm_chng_url":
+            query = {"bank_url": data["bank_url"]}
+
+        elif act == "adm_chng_desc":
+            query = {"bank_description": data["bank_description"]}
+        if not query:
+            return
+        text = " AND ".join([f"{key}='{value}'" for key, value in query.items()])
+        sql = f"UPDATE banks SET {text} WHERE bank_id=$1;"
+        print(sql)
+        async with self._transaction(isolation="serializable") as connection:
+            await connection.execute(sql, bank_id)
 
     async def select_user_bank_full(self, telegram_id, bank_id):
         sql = "SELECT banks.*, user_banks.fav_status, user_banks.tag_status FROM banks " \

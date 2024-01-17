@@ -1,7 +1,7 @@
 from typing import Union
 
 from aiogram import types
-from aiogram.types import InputMedia
+from aiogram.types import InputMedia, ContentType
 from aiogram.utils.exceptions import MessageNotModified
 import aiogram.utils.markdown as fmt
 
@@ -36,59 +36,33 @@ async def smart_message_interaction_photo(target: Union[types.Message, types.Cal
                                           msg_text: str = None,
                                           media_file_id: str = None):
 
-    if media_file_id is not None:
+    if media_file_id:
         media_file = InputMedia(media=media_file_id, caption=msg_text)
     else:
         media_file = None
 
     if isinstance(target, types.CallbackQuery):
         target: types.CallbackQuery
-        if target.message.text:
-            if media_file:
-                # print(f"{target}")
-                print(f"{media_file.media}")
-                # await target.message.answer(text=media_file.caption)
-                await target.message.answer_photo(photo=media_file.media, caption=media_file.caption,
-                                                  reply_markup=reply_markup)
-                try:
-                    await target.message.delete_reply_markup()
-                except:
-                    pass
-            else:
+        if media_file and target.message.content_type == ContentType.PHOTO:
+            await target.message.edit_media(media=media_file,
+                                            reply_markup=reply_markup)
+        else:
+            try:
                 await target.message.edit_text(text=msg_text,
                                                reply_markup=reply_markup)
-            return
-        else:
-            if media_file:
-                try:
-                    await target.message.edit_media(media=media_file, reply_markup=reply_markup)
-                except MessageNotModified:
-                    pass
-                except:
-                    await target.message.answer_photo(
-                        photo=media_file.media,
-                        caption=msg_text,
-                        reply_markup=reply_markup)
-                    try:
-                        await target.message.delete_reply_markup()
-                    except:
-                        pass
-            else:
+            except:
                 await target.message.answer(text=msg_text,
                                             reply_markup=reply_markup)
-                try:
-                    await target.message.delete_reply_markup()
-                except:
-                    pass
-            return
     else:
-        target: types.Message
         if media_file:
-            await target.answer_photo(photo=media_file.media, caption=media_file.caption, reply_markup=reply_markup)
-        else:
-            await target.answer(text=msg_text,
-                                reply_markup=reply_markup)
-        return
+            await target.answer_photo(photo=media_file.media, caption=media_file.caption,
+                                      reply_markup=reply_markup)
+            try:
+                await target.edit_text(text=msg_text, reply_markup=reply_markup)
+            except:
+                await target.answer(text=msg_text,
+                                    reply_markup=reply_markup)
+    return
 
 
 async def select_func_and_count_banks(menu, db, user_tg_id):

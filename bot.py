@@ -21,6 +21,7 @@ def register_all_middlewares(dp, db, config):
     dp.setup_middleware(EnvironmentMiddleware(db=db, config=config))
     dp.setup_middleware(OffWatchesMiddleware())
 
+
 def register_all_filters(dp):
     dp.filters_factory.bind(AdminFilter)
 

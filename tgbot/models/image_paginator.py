@@ -10,10 +10,8 @@ class ImagePaginator:
         if not cur_bank:
             return
         if for_role == "admin":
-            interaction_buttons = await cls.create_interactions_keyboard(for_role=for_role,
-                                                                         cur_bank=cur_bank,
-                                                                         cur_page=cur_page,
-                                                                         menu=menu)
+            interaction_buttons = await cls.create_interactions_keyboard(for_role=for_role, cur_bank=cur_bank,
+                                                                         cur_page=cur_page, menu=menu)
             navg_buttons = await cls.create_navg_buttons(for_role=for_role, cur_page=cur_page,
                                                          amount_of_pages=amount_of_pages, menu=menu)
             reply_markup = InlineKeyboardMarkup(row_width=1, inline_keyboard=[
@@ -49,28 +47,28 @@ class ImagePaginator:
         if for_role == "admin":
             interaction_arr += (
                 [InlineKeyboardButton(text="Изменить описание",
-                                      callback_data=adm_act_callback.new(
+                                      callback_data=bank_inter.new(
                                           act="adm_chng_desc",
                                           bid=cur_bank["bank_id"],
                                           c_p=cur_page,
                                           menu=menu
                                       ))],
                 [InlineKeyboardButton(text="Изменить название",
-                                      callback_data=adm_act_callback.new(
+                                      callback_data=bank_inter.new(
                                           act="adm_chng_name",
                                           bid=cur_bank["bank_id"],
                                           c_p=cur_page,
                                           menu=menu
                                       ))],
                 [InlineKeyboardButton(text="Изменить фото",
-                                      callback_data=adm_act_callback.new(
+                                      callback_data=bank_inter.new(
                                           act="adm_chng_photo",
                                           bid=cur_bank["bank_id"],
                                           c_p=cur_page,
                                           menu=menu
                                       ))],
                 [InlineKeyboardButton(text="Изменить ссылку",
-                                      callback_data=adm_act_callback.new(
+                                      callback_data=bank_inter.new(
                                           act="adm_chng_url",
                                           bid=cur_bank["bank_id"],
                                           c_p=cur_page,

@@ -7,7 +7,7 @@ import aiogram.utils.markdown as fmt
 from aiogram.dispatcher.filters import Command
 
 from tgbot.config import Config
-from tgbot.keyboards.callback_datas import adm_act_callback, adm_bank_navg
+from tgbot.keyboards.callback_datas import adm_act_callback, adm_bank_navg, bank_inter
 from tgbot.misc.exceptions import ActException, StateException
 from tgbot.misc.misc_functions import format_channel_link, format_bank_text, smart_message_interaction_photo
 from tgbot.misc.states import AdminStates
@@ -29,27 +29,44 @@ async def open_admin_main_menu(target: Union[types.CallbackQuery, types.Message]
                                                               menu="bank_preview"))],
         [InlineKeyboardButton(text="Все займы", url=channel_url)],
     ])
-    if isinstance(target, types.CallbackQuery):
-        if target.message.content_type == ContentType.TEXT:
-            await target.message.answer_photo(
-                photo=config.misc.main_photo,
-                caption=f"Привет, {target.from_user.full_name}!\n"
-                        f"Для взаимодействия используйте кнопки снизу 👇",
-                reply_markup=reply_markup)
-        else:
-            await target.message.edit_media(media=InputMedia(media=config.misc.main_photo,
-                                                             caption=f"Привет, {target.from_user.full_name}!\n"
-                                                                     f"Для взаимодействия используйте кнопки снизу 👇"),
-                                            reply_markup=reply_markup)
+    if config.misc.main_photo:
+        if isinstance(target, types.CallbackQuery):
+            if target.message.content_type == ContentType.TEXT:
+                await target.message.answer_photo(
+                    photo=config.misc.main_photo,
+                    caption=f"Привет, {target.from_user.full_name}!\n"
+                            f"Для взаимодействия используйте кнопки снизу 👇",
+                    reply_markup=reply_markup)
+            else:
+                await target.message.edit_media(media=InputMedia(
+                    media=config.misc.main_photo,
+                    caption=
+                    f"Привет, {target.from_user.full_name}!\n"
+                    f"Для взаимодействия используйте кнопки снизу 👇"),
+                    reply_markup=reply_markup)
 
-    elif isinstance(target, types.Message):
-        await target.answer_photo(photo=config.misc.main_photo,
-                                  caption=f"Привет, {target.from_user.full_name}!\n"
-                                          f"Для взаимодействия используйте кнопки снизу 👇",
-                                  reply_markup=reply_markup
-                                  )
+        elif isinstance(target, types.Message):
+            await target.answer_photo(photo=config.misc.main_photo,
+                                      caption=f"Привет, {target.from_user.full_name}!\n"
+                                              f"Для взаимодействия используйте кнопки снизу 👇",
+                                      reply_markup=reply_markup
+                                      )
+        else:
+            print(f"Новый type попал в объект main menu target = {target}")
     else:
-        print(f"Новый type попал в объект main menu target = {target}")
+        if isinstance(target, types.CallbackQuery):
+            if target.message.content_type == ContentType.TEXT:
+                await target.message.edit_text(text=f"Привет, {target.from_user.full_name}!\n"
+                                                    f"Для взаимодействия используйте кнопки снизу 👇",
+                                               reply_markup=reply_markup)
+            else:
+                await target.message.answer(text=f"Привет, {target.from_user.full_name}!\n"
+                                                 f"Для взаимодействия используйте кнопки снизу 👇",
+                                            reply_markup=reply_markup)
+        else:
+            await target.answer(text=f"Привет, {target.from_user.full_name}!\n"
+                                     f"Для взаимодействия используйте кнопки снизу 👇",
+                                reply_markup=reply_markup)
 
 
 async def admin_main_menu(cq: types.CallbackQuery, state, config):
@@ -198,6 +215,20 @@ async def adm_bank_carousel(cq: types.CallbackQuery, db: Database, config, callb
 
     bank = await db.select_bank_offset(telegram_id=cq.from_user.id, offset=cur_page)
     if not bank:
+        reply_markup = InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="Главное меню",
+                                  callback_data=adm_act_callback.new(act="back_to_main_menu"))]])
+        try:
+            await cq.message.edit_text(text="Список пуст, попробуйте что-нибудь сюда добавить 👍",
+                                       reply_markup=reply_markup)
+        except:
+            try:
+                await cq.message.edit_caption(caption="Список пуст, попробуйте что-нибудь сюда добавить 👍",
+                                              reply_markup=reply_markup)
+            except:
+                pass
+
+
         return
     bank_rating = await db.calculate_bank_rating(bank["bank_id"])
     bank_text = await format_bank_text(bank=bank, bank_rating=bank_rating)
@@ -213,8 +244,8 @@ async def adm_bank_carousel(cq: types.CallbackQuery, db: Database, config, callb
 async def adm_change_bank_menu(cq, state, callback_data, db):
     await AdminStates.adm_chng_dest.set()
     bank_id = int(callback_data["bid"])
-    await state.update_data(bank_id=bank_id)
     act = callback_data["act"]
+    await state.update_data(bank_id=bank_id, act=act)
     reply_markup = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="❌ Главное меню",
                               callback_data=adm_act_callback.new(act="back_to_main_menu"))]
@@ -233,25 +264,25 @@ async def adm_change_bank_menu(cq, state, callback_data, db):
         await cq.message.answer(text="Отправьте новый url для банка",
                                 reply_markup=reply_markup)
     elif act == "adm_chng_desc":
-        await AdminStates.adm_chng_url.set()
-        await cq.message.answer(text="Отправьте новый url для банка",
-                                treply_markup=reply_markup)
+        await AdminStates.adm_chng_dest.set()
+        await cq.message.answer(text="Отправьте новое описание для банка",
+                                reply_markup=reply_markup)
     else:
         raise ActException
 
 
 async def adm_get_data_for_bank_menu(message: types.Message, state: FSMContext, db: Database):
     cur_state = await state.get_state()
-    if cur_state == AdminStates.adm_chng_name and message.content_type == ContentType.TEXT:
+    if cur_state == AdminStates.adm_chng_name.state and message.content_type == ContentType.TEXT:
         bank_name = message.html_text
         await state.update_data(bank_name=bank_name)
-    elif cur_state == AdminStates.adm_chng_photo and message.content_type == ContentType.PHOTO:
+    elif cur_state == AdminStates.adm_chng_photo.state and message.content_type == ContentType.PHOTO:
         bank_photo = message.photo
         await state.update_data(bank_photo=bank_photo)
-    elif cur_state == AdminStates.adm_chng_url and message.content_type == ContentType.TEXT:
+    elif cur_state == AdminStates.adm_chng_url.state and message.content_type == ContentType.TEXT:
         bank_url = message.text
         await state.update_data(bank_url=bank_url)
-    elif cur_state == AdminStates.adm_chng_dest and message.content_type == ContentType.TEXT:
+    elif cur_state == AdminStates.adm_chng_dest.state and message.content_type == ContentType.TEXT:
         bank_description = message.html_text
         await state.update_data(bank_description=bank_description)
     else:
@@ -263,49 +294,27 @@ async def adm_get_data_for_bank_menu(message: types.Message, state: FSMContext, 
                               callback_data=adm_act_callback.new(act="back_to_main_menu"))]])
     await message.answer(text=message.text, reply_markup=reply_markup)
 
+
 async def confirm_change(cq, callback_data, db: Database, state: FSMContext):
     await state.reset_state(with_data=False)
     data = await state.get_data()
     await state.reset_state()
-    act = callback_data["act"]
-    bank_id = int(callback_data["bank_id"])
-
-    if act == "get_chng_name":
+    act = data["act"]
+    bank_id = int(data["bank_id"])
+    if act == "adm_chng_name":
         await db.update_bank_menu(bank_id, data)
-    elif act == "get_chng_photo":
+    elif act == "adm_chng_photo":
         await db.update_bank_menu(bank_id, data)
-    elif act == "get_chng_url":
+    elif act == "adm_chng_url":
         await db.update_bank_menu(bank_id, data)
     elif act == "adm_chng_desc":
         await db.update_bank_menu(bank_id, data)
     else:
         raise ActException
-
-
-async def adm_get_chng_desc(message, state):
-    bank_name = message.html_text
-    await state.update_data(bank_name=bank_name)
-    reply_markup = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="✅", ),
-         InlineKeyboardButton(text="❌", callback_data=adm_act_callback.filter(act="back_to_main_menu"))]
-    ])
-
-async def adm_get_chng_name(message: types.Message, state):
-    bank_name = message.html_text
-    await state.update_data(bank_name=bank_name)
-
-
-async def adm_get_chng_photo(message: types.Message, state):
-    bank_photo = message.photo
-    await state.update_data(bank_photo=bank_photo)
-
-
-async def adm_get_chng_url(message: types.Message, state):
-    url = message.html_text
-    await state.update_data(bank_url=url)
-
-
-
+    await cq.message.edit_text("Выполнено успешно!", reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="Главное меню",
+                              callback_data=adm_act_callback.new(act="back_to_main_menu"))]
+    ]))
 
 
 def register_admin(dp: Dispatcher):
@@ -340,16 +349,20 @@ def register_admin(dp: Dispatcher):
     dp.register_callback_query_handler(adm_bank_carousel, adm_bank_navg.filter(menu="bank_preview"),
                                        state="*",
                                        is_admin=True)
+    dp.register_message_handler(adm_get_data_for_bank_menu,
+                                state=[AdminStates.adm_chng_name,
+                                       AdminStates.adm_chng_photo,
+                                       AdminStates.adm_chng_url,
+                                       AdminStates.adm_chng_dest])
     dp.register_callback_query_handler(adm_change_bank_menu,
-                                       adm_act_callback.filter(act=[
+                                       bank_inter.filter(act=[
                                            "adm_chng_name",
                                            "adm_chng_photo",
                                            "adm_chng_url",
                                            "adm_chng_desc"]
                                        ), state="*", is_admin=True)
     dp.register_callback_query_handler(confirm_change, adm_act_callback.filter(act="confirm_change"),
-                                       is_admin=True, state=[
-            adm_act_callback.filter(act="adm_chng_name"),
-            adm_act_callback.filter(act="adm_chng_photo"),
-            adm_act_callback.filter(act="adm_chng_url"),
-            adm_act_callback.filter(act="adm_chng_dest")])
+                                       is_admin=True, state=[AdminStates.adm_chng_name,
+                                       AdminStates.adm_chng_photo,
+                                       AdminStates.adm_chng_url,
+                                       AdminStates.adm_chng_dest])

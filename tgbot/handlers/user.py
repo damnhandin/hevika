@@ -15,6 +15,8 @@ from tgbot.models.postgresql import Database
 async def open_user_main_menu(target: Union[types.CallbackQuery, types.Message], config: Config):
     if config.misc.main_photo:
         main_photo = config.misc.main_photo
+    else:
+        main_photo = None
     link = await format_channel_link(config.tg_bot.channel_tag)
     reply_markup = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="Бесплатные займы 💲",
@@ -203,6 +205,7 @@ async def us_open_fav(cq, db: Database):
                                               msg_text="Список пуст, попробуйте что-нибудь сюда добавить 👍",
                                               reply_markup=back_to_main_menu)
         return
+
     cur_bank = await db.select_user_fav_bank(telegram_id=cq.from_user.id)
     if not cur_bank:
         await smart_message_interaction_photo(target=cq,
