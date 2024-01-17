@@ -13,6 +13,8 @@ from tgbot.models.postgresql import Database
 
 
 async def open_user_main_menu(target: Union[types.CallbackQuery, types.Message], config: Config):
+    if config.misc.main_photo:
+        main_photo = config.misc.main_photo
     link = await format_channel_link(config.tg_bot.channel_tag)
     reply_markup = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="Бесплатные займы 💲",
@@ -32,7 +34,8 @@ async def open_user_main_menu(target: Union[types.CallbackQuery, types.Message],
     text = f"Приветствую вас, {target.from_user.full_name}! 👋\n"\
            f"Я помогу вам найти беспроцентные займы в пару кликов! 😉\n\n"\
            "Для взаимодействия используйте кнопки снизу 👇"
-    await smart_message_interaction_photo(target=target, msg_text=text, reply_markup=reply_markup)
+    await smart_message_interaction_photo(target=target, msg_text=text, reply_markup=reply_markup,
+                                          media_file_id=main_photo)
 
 
 async def user_main_menu(cq, config, state, db):

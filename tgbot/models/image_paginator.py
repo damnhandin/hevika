@@ -49,28 +49,28 @@ class ImagePaginator:
         if for_role == "admin":
             interaction_arr += (
                 [InlineKeyboardButton(text="Изменить описание",
-                                      callback_data=admbank_inter.new(
+                                      callback_data=adm_act_callback.new(
                                           act="adm_chng_desc",
                                           bid=cur_bank["bank_id"],
                                           c_p=cur_page,
                                           menu=menu
                                       ))],
                 [InlineKeyboardButton(text="Изменить название",
-                                      callback_data=admbank_inter.new(
+                                      callback_data=adm_act_callback.new(
                                           act="adm_chng_name",
                                           bid=cur_bank["bank_id"],
                                           c_p=cur_page,
                                           menu=menu
                                       ))],
                 [InlineKeyboardButton(text="Изменить фото",
-                                      callback_data=admbank_inter.new(
+                                      callback_data=adm_act_callback.new(
                                           act="adm_chng_photo",
                                           bid=cur_bank["bank_id"],
                                           c_p=cur_page,
                                           menu=menu
                                       ))],
                 [InlineKeyboardButton(text="Изменить ссылку",
-                                      callback_data=admbank_inter.new(
+                                      callback_data=adm_act_callback.new(
                                           act="adm_chng_url",
                                           bid=cur_bank["bank_id"],
                                           c_p=cur_page,

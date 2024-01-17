@@ -174,6 +174,15 @@ class Database:
             await self.execute(sql, username, first_name, last_name, full_name, registration_date, telegram_id,
                                execute=True)
 
+    async def update_bank_menu(self, *args):
+        print(args)
+        for name, value in globals().items():
+            if value is not None:
+                print(value)
+
+        sql = ""
+        await self.execute(sql, )
+
     async def select_user_bank_full(self, telegram_id, bank_id):
         sql = "SELECT banks.*, user_banks.fav_status, user_banks.tag_status FROM banks " \
               "LEFT JOIN user_banks ON banks.bank_id = user_banks.bank_id " \

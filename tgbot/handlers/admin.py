@@ -1,12 +1,14 @@
 from typing import Union
 
 from aiogram import Dispatcher, types
+from aiogram.dispatcher import FSMContext
 from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, ContentType, InputMedia
 import aiogram.utils.markdown as fmt
 from aiogram.dispatcher.filters import Command
 
 from tgbot.config import Config
 from tgbot.keyboards.callback_datas import adm_act_callback, adm_bank_navg
+from tgbot.misc.exceptions import ActException, StateException
 from tgbot.misc.misc_functions import format_channel_link, format_bank_text, smart_message_interaction_photo
 from tgbot.misc.states import AdminStates
 from tgbot.models import image_paginator
@@ -207,36 +209,103 @@ async def adm_bank_carousel(cq: types.CallbackQuery, db: Database, config, callb
                                           msg_text=bank_text,
                                           media_file_id=bank["bank_photo"])
 
-async def adm_chng_desc(cq: types.CallbackQuery):
+
+async def adm_change_bank_menu(cq, state, callback_data, db):
+    await AdminStates.adm_chng_dest.set()
+    bank_id = int(callback_data["bid"])
+    await state.update_data(bank_id=bank_id)
+    act = callback_data["act"]
     reply_markup = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="Главное меню",
+        [InlineKeyboardButton(text="❌ Главное меню",
                               callback_data=adm_act_callback.new(act="back_to_main_menu"))]
     ])
-    await cq.message.answer("Введите", reply_markup=reply_markup)
+
+    if act == "adm_chng_name":
+        await AdminStates.adm_chng_name.set()
+        await cq.message.answer(text="Введите новое название для банка",
+                                reply_markup=reply_markup)
+    elif act == "adm_chng_photo":
+        await AdminStates.adm_chng_photo.set()
+        await cq.message.answer(text="Отправьте новое фото для банка",
+                                reply_markup=reply_markup)
+    elif act == "adm_chng_url":
+        await AdminStates.adm_chng_url.set()
+        await cq.message.answer(text="Отправьте новый url для банка",
+                                reply_markup=reply_markup)
+    elif act == "adm_chng_desc":
+        await AdminStates.adm_chng_url.set()
+        await cq.message.answer(text="Отправьте новый url для банка",
+                                treply_markup=reply_markup)
+    else:
+        raise ActException
 
 
-async def adm_chng_name(cq: types.CallbackQuery):
+async def adm_get_data_for_bank_menu(message: types.Message, state: FSMContext, db: Database):
+    cur_state = await state.get_state()
+    if cur_state == AdminStates.adm_chng_name and message.content_type == ContentType.TEXT:
+        bank_name = message.html_text
+        await state.update_data(bank_name=bank_name)
+    elif cur_state == AdminStates.adm_chng_photo and message.content_type == ContentType.PHOTO:
+        bank_photo = message.photo
+        await state.update_data(bank_photo=bank_photo)
+    elif cur_state == AdminStates.adm_chng_url and message.content_type == ContentType.TEXT:
+        bank_url = message.text
+        await state.update_data(bank_url=bank_url)
+    elif cur_state == AdminStates.adm_chng_dest and message.content_type == ContentType.TEXT:
+        bank_description = message.html_text
+        await state.update_data(bank_description=bank_description)
+    else:
+        raise StateException
     reply_markup = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="Главное меню",
-                              callback_data=adm_act_callback.new(act="back_to_main_menu"))]
-    ])
-    await cq.message.answer("Введите", reply_markup=reply_markup)
+        [InlineKeyboardButton(text="✅ Подтвердить",
+                              callback_data=adm_act_callback.new(act="confirm_change"))],
+        [InlineKeyboardButton(text="❌ Главное меню",
+                              callback_data=adm_act_callback.new(act="back_to_main_menu"))]])
+    await message.answer(text=message.text, reply_markup=reply_markup)
+
+async def confirm_change(cq, callback_data, db: Database, state: FSMContext):
+    await state.reset_state(with_data=False)
+    data = await state.get_data()
+    await state.reset_state()
+    act = callback_data["act"]
+    bank_id = int(callback_data["bank_id"])
+
+    if act == "get_chng_name":
+        await db.update_bank_menu(bank_id, data)
+    elif act == "get_chng_photo":
+        await db.update_bank_menu(bank_id, data)
+    elif act == "get_chng_url":
+        await db.update_bank_menu(bank_id, data)
+    elif act == "adm_chng_desc":
+        await db.update_bank_menu(bank_id, data)
+    else:
+        raise ActException
 
 
-async def adm_chng_photo(cq: types.CallbackQuery):
+async def adm_get_chng_desc(message, state):
+    bank_name = message.html_text
+    await state.update_data(bank_name=bank_name)
     reply_markup = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="Главное меню",
-                              callback_data=adm_act_callback.new(act="back_to_main_menu"))]
+        [InlineKeyboardButton(text="✅", ),
+         InlineKeyboardButton(text="❌", callback_data=adm_act_callback.filter(act="back_to_main_menu"))]
     ])
-    await cq.message.answer("Введите", reply_markup=reply_markup)
+
+async def adm_get_chng_name(message: types.Message, state):
+    bank_name = message.html_text
+    await state.update_data(bank_name=bank_name)
 
 
-async def adm_chng_url(cq: types.CallbackQuery):
-    reply_markup = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="Главное меню",
-                              callback_data=adm_act_callback.new(act="back_to_main_menu"))]
-    ])
-    await cq.message.answer("Введите", reply_markup=reply_markup)
+async def adm_get_chng_photo(message: types.Message, state):
+    bank_photo = message.photo
+    await state.update_data(bank_photo=bank_photo)
+
+
+async def adm_get_chng_url(message: types.Message, state):
+    url = message.html_text
+    await state.update_data(bank_url=url)
+
+
+
 
 
 def register_admin(dp: Dispatcher):
@@ -271,3 +340,16 @@ def register_admin(dp: Dispatcher):
     dp.register_callback_query_handler(adm_bank_carousel, adm_bank_navg.filter(menu="bank_preview"),
                                        state="*",
                                        is_admin=True)
+    dp.register_callback_query_handler(adm_change_bank_menu,
+                                       adm_act_callback.filter(act=[
+                                           "adm_chng_name",
+                                           "adm_chng_photo",
+                                           "adm_chng_url",
+                                           "adm_chng_desc"]
+                                       ), state="*", is_admin=True)
+    dp.register_callback_query_handler(confirm_change, adm_act_callback.filter(act="confirm_change"),
+                                       is_admin=True, state=[
+            adm_act_callback.filter(act="adm_chng_name"),
+            adm_act_callback.filter(act="adm_chng_photo"),
+            adm_act_callback.filter(act="adm_chng_url"),
+            adm_act_callback.filter(act="adm_chng_dest")])

@@ -45,6 +45,9 @@ async def smart_message_interaction_photo(target: Union[types.Message, types.Cal
         target: types.CallbackQuery
         if target.message.text:
             if media_file:
+                # print(f"{target}")
+                print(f"{media_file.media}")
+                # await target.message.answer(text=media_file.caption)
                 await target.message.answer_photo(photo=media_file.media, caption=media_file.caption,
                                                   reply_markup=reply_markup)
                 try:
