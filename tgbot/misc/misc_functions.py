@@ -42,14 +42,23 @@ async def smart_message_interaction_photo(target: Union[types.Message, types.Cal
 
     if isinstance(target, types.CallbackQuery):
         target: types.CallbackQuery
-        if media_file and target.message.content_type == ContentType.PHOTO:
-            await target.message.edit_media(media=media_file,
-                                            reply_markup=reply_markup)
-        else:
+        if target.message.content_type == ContentType.TEXT:
             try:
                 await target.message.answer_photo(photo=media_file,
                                                   reply_markup=reply_markup)
-            except:
+            except Exception as exc:
+                print(exc)
+                await target.message.answer(text=msg_text,
+                                            reply_markup=reply_markup)
+        else:
+            if media_file:
+                try:
+                    await target.message.edit_media(media=media_file,
+                                                    reply_markup=reply_markup)
+                except:
+                    await target.message.answer_photo(photo=media_file,
+                                                      reply_markup=reply_markup)
+            else:
                 await target.message.answer(text=msg_text,
                                             reply_markup=reply_markup)
     else:
