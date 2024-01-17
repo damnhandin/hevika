@@ -207,16 +207,45 @@ async def adm_bank_carousel(cq: types.CallbackQuery, db: Database, config, callb
                                           msg_text=bank_text,
                                           media_file_id=bank["bank_photo"])
 
+async def adm_chng_desc(cq: types.CallbackQuery):
+    reply_markup = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="Главное меню",
+                              callback_data=adm_act_callback.new(act="back_to_main_menu"))]
+    ])
+    await cq.message.answer("Введите", reply_markup=reply_markup)
+
+
+async def adm_chng_name(cq: types.CallbackQuery):
+    reply_markup = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="Главное меню",
+                              callback_data=adm_act_callback.new(act="back_to_main_menu"))]
+    ])
+    await cq.message.answer("Введите", reply_markup=reply_markup)
+
+
+async def adm_chng_photo(cq: types.CallbackQuery):
+    reply_markup = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="Главное меню",
+                              callback_data=adm_act_callback.new(act="back_to_main_menu"))]
+    ])
+    await cq.message.answer("Введите", reply_markup=reply_markup)
+
+
+async def adm_chng_url(cq: types.CallbackQuery):
+    reply_markup = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="Главное меню",
+                              callback_data=adm_act_callback.new(act="back_to_main_menu"))]
+    ])
+    await cq.message.answer("Введите", reply_markup=reply_markup)
+
 
 def register_admin(dp: Dispatcher):
     dp.register_message_handler(admin_start, commands=["admin"], state="*",
                                 is_admin=True)
     dp.register_callback_query_handler(admin_main_menu, adm_act_callback.filter(act="back_to_main_menu"), state="*",
                                        is_admin=True)
-    dp.register_message_handler(get_my_id, commands=["get_my_id"], state="*",
-                                is_admin=True)
-    dp.register_channel_post_handler(get_current_chat, Command("get_current_chat"), state="*",
-                                     is_admin=True)
+    dp.register_message_handler(get_my_id, commands=["get_my_id"], state="*")
+    dp.register_channel_post_handler(get_current_chat, Command("get_current_chat"), state="*")
     dp.register_callback_query_handler(add_new_bank, adm_act_callback.filter(act="add_new_bank"), state="*",
                                        is_admin=True)
     dp.register_message_handler(get_bank_name, state=AdminStates.waiting_bank_name,
