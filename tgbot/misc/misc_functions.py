@@ -35,7 +35,7 @@ async def format_bank_text(bank, bank_rating, is_notification=False):
 async def smart_message_interaction_photo(target: Union[types.Message, types.CallbackQuery], reply_markup,
                                           msg_text: str = None,
                                           media_file_id: str = None):
-
+    print(3)
     if media_file_id:
         media_file = InputMedia(media=media_file_id, caption=msg_text)
     else:
@@ -57,11 +57,10 @@ async def smart_message_interaction_photo(target: Union[types.Message, types.Cal
         if media_file:
             await target.answer_photo(photo=media_file.media, caption=media_file.caption,
                                       reply_markup=reply_markup)
-            try:
-                await target.edit_text(text=msg_text, reply_markup=reply_markup)
-            except:
-                await target.answer(text=msg_text,
-                                    reply_markup=reply_markup)
+
+        await target.answer(text=msg_text,
+                            reply_markup=reply_markup)
+
     return
 
 

@@ -13,6 +13,7 @@ from tgbot.models.postgresql import Database
 
 
 async def open_user_main_menu(target: Union[types.CallbackQuery, types.Message], config: Config):
+    print(2)
     if config.misc.main_photo:
         main_photo = config.misc.main_photo
     else:
@@ -71,6 +72,7 @@ async def user_start(message: Message, db: Database, config: Config, state):
     except:
         pass
     if not bank:
+        print(1)
         await open_user_main_menu(message, config)
         return
     bank_rating = await db.calculate_bank_rating(bank_id=bank["bank_id"])
