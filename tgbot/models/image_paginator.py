@@ -74,6 +74,13 @@ class ImagePaginator:
                                           c_p=cur_page,
                                           menu=menu
                                       ))],
+                [InlineKeyboardButton(text="Удалить банк полностью",
+                                      callback_data=bank_inter.new(
+                                          act="adm_del_bank",
+                                          bid=cur_bank["bank_id"],
+                                          c_p=cur_page,
+                                          menu=menu
+                                      ))],
             )
         else:
             bank_url_button = InlineKeyboardButton(text="Забрать прямо сейчас",

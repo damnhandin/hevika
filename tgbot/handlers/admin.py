@@ -1,3 +1,4 @@
+import logging
 from typing import Union
 
 from aiogram import Dispatcher, types
@@ -319,10 +320,47 @@ async def confirm_change(cq, callback_data, db: Database, state: FSMContext):
 
 async def update_channel_banks_info(message, db, config: Config):
     banks = await db.select_banks_channel_info()
-    print(banks)
-    await ChannelInteractions.update_bank_info(bot=message.bot,
-                                               banks=banks,
-                                               bot_tag=config.tg_bot.bot_name)
+    try:
+        await ChannelInteractions.update_bank_info(bot=message.bot,
+                                                   banks=banks,
+                                                   bot_tag=config.tg_bot.bot_name)
+    except Exception as exc:
+        await message.answer(f"Произошла ошибка {exc}")
+        logging.debug(f"Произошла ошибка {exc}", exc_info=True)
+
+
+async def adm_del_bank(cq, db: Database, callback_data):
+    bank_id = int(callback_data["bid"])
+    bank = await db.select_bank_and_channel(bank_id)
+    is_deleted_from_channel = False
+    is_deleted_from_db = False
+    try:
+        await ChannelInteractions.delete_bank_from_channel(cq.bot, bank)
+    except Exception as exc:
+        await cq.message.answer(text=f"Ошибка при удалении в канале {exc}, bank_id={bank.get('bank_id')}")
+        logging.debug(f"{exc}, {callback_data}", exc_info=True)
+        print(bank)
+    else:
+        is_deleted_from_channel = True
+    try:
+        await db.full_delete_bank(bank_id=bank_id)
+    except Exception as exc:
+        await cq.message.answer(text=f"Ошибка при удалении из базы данных {exc}, bank_id={bank.get('bank_id')}")
+        logging.debug(f"{exc}, {callback_data}", exc_info=True)
+        print(bank)
+    else:
+        is_deleted_from_db = True
+    if is_deleted_from_channel:
+        act_channel_text = "Удаление из канала прошло успешно"
+    else:
+        act_channel_text = "Удалить из канала не получилось"
+    if is_deleted_from_db:
+        act_db_text = "Удаление из базы данных прошло успешно"
+    else:
+        act_db_text = "Удалить из базы данных не получилось"
+    await cq.message.answer(f"Удаление завершено, статусы:\n"
+                            f"{act_channel_text}\n"
+                            f"{act_db_text}")
 
 
 def register_admin(dp: Dispatcher):
@@ -375,3 +413,5 @@ def register_admin(dp: Dispatcher):
                                        AdminStates.adm_chng_url,
                                        AdminStates.adm_chng_dest])
     dp.register_message_handler(update_channel_banks_info, state="*", commands="update_banks", is_admin=True)
+    dp.register_callback_query_handler(adm_del_bank, bank_inter.filter(act="adm_del_bank"), state="*",
+                                       is_admin=True)

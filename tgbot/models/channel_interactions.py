@@ -10,15 +10,16 @@ from tgbot.models.postgresql import Database
 class ChannelInteractions:
     @staticmethod
     async def format_preview_text(bank, bot_url):
+        link_text = fmt.hbold(f'Ссылка на бота для IPhone\n👉 {bot_url}')
         preview_text = f"{bank['bank_name']}!\n" \
                        f"{bank['bank_description']}\n\n" \
-                       f"{fmt.hlink(title='Ссылка на бота для IPhone', url=bot_url)}"
+                       f"{link_text}"
         return preview_text
 
     @classmethod
     async def add_bank_to_channel(cls, bot: Bot, bank_id, db: Database, channel_id, bot_tag):
         bank = await db.select_bank_by_id(bank_id)
-        open_in_bot_url = f"telegram.me/{bot_tag}?start=0t{bank['bank_id']}"
+        open_in_bot_url = f"t.me/{bot_tag}?start=0t{bank['bank_id']}"
         preview_text = await cls.format_preview_text(bank, open_in_bot_url)
         photo_id = bank["bank_photo"]
         bank_url = bank["bank_url"]
@@ -37,7 +38,7 @@ class ChannelInteractions:
     @classmethod
     async def update_bank_info(cls, bot: Bot, banks, bot_tag):
         for bank in banks:
-            open_in_bot_url = f"telegram.me/{bot_tag}?start=0t{bank['bank_id']}"
+            open_in_bot_url = f"t.me/{bot_tag}?start=0t{bank['bank_id']}"
             preview_text = await cls.format_preview_text(bank, open_in_bot_url)
             photo_id = bank["bank_photo"]
             bank_url = bank["bank_url"]
@@ -64,3 +65,11 @@ class ChannelInteractions:
                                                 reply_markup=reply_markup)
                 except Exception as exc:
                     logging.debug(f"{exc}", exc_info=True)
+
+    @classmethod
+    async def delete_bank_from_channel(self, bot: Bot, bank):
+        channel_id = bank.get("channel_id")
+        post_id = bank.get("post_id")
+        if not post_id or not channel_id:
+            return
+        await bot.delete_message(chat_id=channel_id, message_id=post_id)

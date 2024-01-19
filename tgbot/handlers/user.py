@@ -64,7 +64,6 @@ async def user_start(message: Message, db: Database, config: Config, state):
                           full_name=tg_user.full_name,
                           telegram_id=tg_user.id)
     deep_link_args = message.get_args()
-    print(deep_link_args)
     bank = None
     try:
         bank_id = int(deep_link_args[2:])
@@ -109,8 +108,7 @@ async def user_bank_carousel(cq: types.CallbackQuery, db: Database, callback_dat
         ])
         await smart_message_interaction_photo(target=cq,
                                               msg_text="Список пуст, попробуйте что-нибудь сюда добавить 👍",
-                                              reply_markup=back_to_main_menu,
-                                              media_file_id=bank["bank_photo"])
+                                              reply_markup=back_to_main_menu)
         return
     bank_rating = await db.calculate_bank_rating(bank_id=bank["bank_id"])
     bank_text = await format_bank_text(bank=bank, bank_rating=bank_rating)

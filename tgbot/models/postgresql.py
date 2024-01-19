@@ -78,6 +78,12 @@ class Database:
         sql = "SELECT * FROM banks INNER JOIN bank_posts USING(bank_id);"
         return await self.execute(sql, fetch=True)
 
+    async def full_delete_bank(self, bank_id):
+        sql = "DELETE FROM bank_posts WHERE bank_id=$1;"
+        await self.execute(sql, bank_id, execute=True)
+        sql = "DELETE FROM banks WHERE bank_id=$1;"
+        await self.execute(sql, bank_id, execute=True)
+
     async def select_all_users(self):
         return await self.execute("SELECT * FROM users;", fetch=True)
 
@@ -156,6 +162,10 @@ class Database:
               "LEFT JOIN user_banks ON user_banks.user_telegram_id=$2 AND banks.bank_id = user_banks.bank_id " \
               "ORDER BY banks.bank_id ASC OFFSET $1"
         return await self.execute(sql, offset, telegram_id, fetchrow=True)
+
+    async def select_bank_and_channel(self, bank_id):
+        sql = "SELECT * FROM banks LEFT JOIN bank_posts USING(bank_id) WHERE bank_id=$1;"
+        return await self.execute(sql, bank_id, fetchrow=True)
 
     async def add_user(self, username, first_name, last_name, full_name, telegram_id):
         registration_date = datetime.now()
