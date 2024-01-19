@@ -2,19 +2,26 @@ import logging
 
 from aiogram import Bot
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, InputMedia
+import aiogram.utils.markdown as fmt
 
 from tgbot.models.postgresql import Database
 
 
 class ChannelInteractions:
+    @staticmethod
+    async def format_preview_text(bank, bot_url):
+        preview_text = f"{bank['bank_name']}!\n" \
+                       f"{bank['bank_description']}\n\n" \
+                       f"{fmt.hlink(title='Ссылка на бота для IPhone', url=bot_url)}"
+        return preview_text
+
     @classmethod
     async def add_bank_to_channel(cls, bot: Bot, bank_id, db: Database, channel_id, bot_tag):
         bank = await db.select_bank_by_id(bank_id)
-        preview_text = f"{bank['bank_name']}!\n" \
-                       f"{bank['bank_description']}"
+        open_in_bot_url = f"telegram.me/{bot_tag}?start=0t{bank['bank_id']}"
+        preview_text = await cls.format_preview_text(bank, open_in_bot_url)
         photo_id = bank["bank_photo"]
         bank_url = bank["bank_url"]
-        open_in_bot_url = f"telegram.me/{bot_tag}?start=0t{bank['bank_id']}"
         reply_markup = InlineKeyboardMarkup(inline_keyboard=[
             [InlineKeyboardButton(text="Перейти на страницу банка",
                                   url=bank_url)],
@@ -30,11 +37,10 @@ class ChannelInteractions:
     @classmethod
     async def update_bank_info(cls, bot: Bot, banks, bot_tag):
         for bank in banks:
-            preview_text = f"{bank['bank_name']}!\n" \
-                           f"{bank['bank_description']}"
+            open_in_bot_url = f"telegram.me/{bot_tag}?start=0t{bank['bank_id']}"
+            preview_text = await cls.format_preview_text(bank, open_in_bot_url)
             photo_id = bank["bank_photo"]
             bank_url = bank["bank_url"]
-            open_in_bot_url = f"telegram.me/{bot_tag}?start=0t{bank['bank_id']}"
             reply_markup = InlineKeyboardMarkup(inline_keyboard=[
                 [InlineKeyboardButton(text="Перейти на страницу банка",
                                       url=bank_url)],
