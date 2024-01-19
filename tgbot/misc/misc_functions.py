@@ -8,7 +8,7 @@ import aiogram.utils.markdown as fmt
 
 
 async def format_channel_link(channel_tag):
-    return f"https://www.t.me/{channel_tag}"
+    return f"t.me/{channel_tag}"
 
 
 async def format_bank_text(bank, bank_rating, is_notification=False):

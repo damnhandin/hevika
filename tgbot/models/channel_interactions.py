@@ -12,7 +12,7 @@ class ChannelInteractions:
                        f"{bank['bank_description']}"
         photo_id = bank["bank_photo"]
         bank_url = bank["bank_url"]
-        open_in_bot_url = f"https://t.me/{bot_tag}?start=0t{bank['bank_id']}"
+        open_in_bot_url = f"t.me/{bot_tag}?start=0t{bank['bank_id']}"
         reply_markup = InlineKeyboardMarkup(inline_keyboard=[
             [InlineKeyboardButton(text="Перейти на страницу банка",
                                   url=bank_url)],

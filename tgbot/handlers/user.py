@@ -18,7 +18,6 @@ async def open_user_main_menu(target: Union[types.CallbackQuery, types.Message],
     else:
         main_photo = None
     link = await format_channel_link(config.tg_bot.channel_tag)
-    print(link)
     reply_markup = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="Бесплатные займы 💲",
                               callback_data=bank_navg.new(
