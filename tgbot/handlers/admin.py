@@ -317,6 +317,14 @@ async def confirm_change(cq, callback_data, db: Database, state: FSMContext):
     ]))
 
 
+async def update_channel_banks_info(message, db, config: Config):
+    banks = await db.select_banks_channel_info()
+    print(banks)
+    await ChannelInteractions.update_bank_info(bot=message.bot,
+                                               banks=banks,
+                                               bot_tag=config.tg_bot.bot_name)
+
+
 def register_admin(dp: Dispatcher):
     dp.register_message_handler(admin_start, commands=["admin"], state="*",
                                 is_admin=True)
@@ -366,3 +374,4 @@ def register_admin(dp: Dispatcher):
                                        AdminStates.adm_chng_photo,
                                        AdminStates.adm_chng_url,
                                        AdminStates.adm_chng_dest])
+    dp.register_message_handler(update_channel_banks_info, state="*", commands="update_banks", is_admin=True)

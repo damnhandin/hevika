@@ -8,7 +8,7 @@ import aiogram.utils.markdown as fmt
 
 
 async def format_channel_link(channel_tag):
-    return f"t.me/{channel_tag}"
+    return f"https://telegram.me/{channel_tag}"
 
 
 async def format_bank_text(bank, bank_rating, is_notification=False):
@@ -48,8 +48,7 @@ async def smart_message_interaction_photo(target: Union[types.Message, types.Cal
                     await target.message.answer_photo(photo=media_file.media,
                                                       caption=media_file.caption,
                                                       reply_markup=reply_markup)
-                except Exception as exc:
-                    logging.info(f"{exc}", exc_info=True)
+                except:
                     try:
                         await target.message.edit_text(text=msg_text,
                                                        reply_markup=reply_markup)

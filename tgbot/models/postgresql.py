@@ -70,10 +70,13 @@ class Database:
         """
         await self.execute(sql, execute=True)
 
-
     async def add_post_to_bd(self, bank_id, channel_id, post_id):
         sql = "INSERT INTO bank_posts (bank_id, channel_id, post_id) VALUES ($1, $2, $3);"
         await self.execute(sql, bank_id, channel_id, post_id, execute=True)
+
+    async def select_banks_channel_info(self):
+        sql = "SELECT * FROM banks INNER JOIN bank_posts USING(bank_id);"
+        return await self.execute(sql, fetch=True)
 
     async def select_all_users(self):
         return await self.execute("SELECT * FROM users;", fetch=True)
