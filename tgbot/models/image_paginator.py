@@ -15,10 +15,10 @@ class ImagePaginator:
             navg_buttons = await cls.create_navg_buttons(for_role=for_role, cur_page=cur_page,
                                                          amount_of_pages=amount_of_pages, menu=menu)
             reply_markup = InlineKeyboardMarkup(row_width=1, inline_keyboard=[
-                *interaction_buttons,
                 [
                     *navg_buttons
-                ]
+                ],
+                *interaction_buttons
             ])
             reply_markup.add(InlineKeyboardButton(text="Главное меню",
                                                   callback_data=adm_act_callback.new(
@@ -31,10 +31,10 @@ class ImagePaginator:
             navg_buttons = await cls.create_navg_buttons(for_role=for_role, cur_page=cur_page,
                                                          amount_of_pages=amount_of_pages, menu=menu)
             reply_markup = InlineKeyboardMarkup(row_width=1, inline_keyboard=[
-                *interaction_buttons,
                 [
                     *navg_buttons
-                ]
+                ],
+                *interaction_buttons
             ])
             reply_markup.add(InlineKeyboardButton(text="Главное меню",
                                                   callback_data=act_callback.new(act="back_to_main_menu")))
