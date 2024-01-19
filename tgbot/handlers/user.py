@@ -64,6 +64,7 @@ async def user_start(message: Message, db: Database, config: Config, state):
                           full_name=tg_user.full_name,
                           telegram_id=tg_user.id)
     deep_link_args = message.get_args()
+    print(deep_link_args)
     bank = None
     try:
         bank_id = int(deep_link_args[2:])
