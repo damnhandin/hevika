@@ -84,8 +84,9 @@ async def get_my_id(message: types.Message):
     await message.answer(text=f"Ваш айди телеграм: {fmt.hbold(message.from_user.id)}")
 
 
-async def get_current_chat(message):
-    await message.answer(text=f"Текущий чат: {fmt.hbold(message.chat.id)}")
+# async def get_current_chat(message):
+#     print(1)
+#     await message.answer(text=f"Текущий чат: {fmt.hbold(message.chat.id)}")
 
 
 async def add_new_bank(cq: types.CallbackQuery):
@@ -369,7 +370,6 @@ def register_admin(dp: Dispatcher):
     dp.register_callback_query_handler(admin_main_menu, adm_act_callback.filter(act="back_to_main_menu"), state="*",
                                        is_admin=True)
     dp.register_message_handler(get_my_id, commands=["get_my_id"], state="*")
-    dp.register_channel_post_handler(get_current_chat, Command("get_current_chat"), state="*")
     dp.register_callback_query_handler(add_new_bank, adm_act_callback.filter(act="add_new_bank"), state="*",
                                        is_admin=True)
     dp.register_message_handler(get_bank_name, state=AdminStates.waiting_bank_name,

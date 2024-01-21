@@ -7,11 +7,13 @@ from aiogram.contrib.fsm_storage.redis import RedisStorage2
 
 from tgbot.config import load_config, Config
 from tgbot.filters.admin import AdminFilter
+from tgbot.filters.group_filter import GroupFilter
 from tgbot.handlers.admin import register_admin
+from tgbot.handlers.channels_chats import register_channel_and_chats
 from tgbot.handlers.echo import register_echo
 from tgbot.handlers.user import register_user
 from tgbot.middlewares.environment import EnvironmentMiddleware
-from tgbot.middlewares.off_watcher import OffWatchesMiddleware
+from tgbot.middlewares.off_watches import OffWatchesMiddleware
 from tgbot.models.postgresql import Database
 
 logger = logging.getLogger(__name__)
@@ -24,9 +26,10 @@ def register_all_middlewares(dp, db, config):
 
 def register_all_filters(dp):
     dp.filters_factory.bind(AdminFilter)
-
+    dp.filters_factory.bind(GroupFilter)
 
 def register_all_handlers(dp):
+    register_channel_and_chats(dp)
     register_user(dp)
     register_admin(dp)
 
@@ -67,7 +70,6 @@ async def main():
     register_all_middlewares(dp, db, config)
     register_all_filters(dp)
     register_all_handlers(dp)
-
     # start
     try:
         await dp.start_polling()

@@ -7,6 +7,8 @@ class OffWatchesMiddleware(BaseMiddleware):
         super().__init__()
 
     async def on_post_process_callback_query(self, cq: types.CallbackQuery, data, *args, **kwargs):
+        print(args)
+        print(kwargs)
         try:
             await cq.answer()
         except:
