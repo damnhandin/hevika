@@ -16,6 +16,6 @@ class GroupFilter(BoundFilter):
         if self.is_group is None:
             return False
         try:
-            return (obj.chat.type != ChatType.is_private) == self.is_group
+            return (obj.chat.type != ChatType.PRIVATE) == self.is_group
         except:
             return True
