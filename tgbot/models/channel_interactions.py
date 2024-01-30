@@ -11,7 +11,7 @@ class ChannelInteractions:
     @staticmethod
     async def format_preview_text(bank):
         link_text = fmt.hitalic(f'Если бот не открывается на Apple - зайдите на канал отдельно, '
-                                f'полностью закрыв канал и бота\n')
+                                f'полностью закрыв канал и бота.\n')
         preview_text = f"{bank['bank_name']}!\n" \
                        f"{bank['bank_description']}\n\n" \
                        f"{link_text}"
