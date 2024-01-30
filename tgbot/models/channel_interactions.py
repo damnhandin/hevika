@@ -9,8 +9,9 @@ from tgbot.models.postgresql import Database
 
 class ChannelInteractions:
     @staticmethod
-    async def format_preview_text(bank, bot_url):
-        link_text = fmt.hbold(f'Ссылка на бота для IPhone\n👉 {bot_url}')
+    async def format_preview_text(bank):
+        link_text = fmt.hbold(f'<i>Если бот не открывается на Apple - зайдите на канал отдельно, '
+                              f'полностью закрыв канал и бота</i>\n')
         preview_text = f"{bank['bank_name']}!\n" \
                        f"{bank['bank_description']}\n\n" \
                        f"{link_text}"
@@ -20,7 +21,7 @@ class ChannelInteractions:
     async def add_bank_to_channel(cls, bot: Bot, bank_id, db: Database, channel_id, bot_tag):
         bank = await db.select_bank_by_id(bank_id)
         open_in_bot_url = f"t.me/{bot_tag}?start=0t{bank['bank_id']}"
-        preview_text = await cls.format_preview_text(bank, open_in_bot_url)
+        preview_text = await cls.format_preview_text(bank)
         photo_id = bank["bank_photo"]
         bank_url = bank["bank_url"]
         reply_markup = InlineKeyboardMarkup(inline_keyboard=[
@@ -39,7 +40,7 @@ class ChannelInteractions:
     async def update_bank_info(cls, bot: Bot, banks, bot_tag):
         for bank in banks:
             open_in_bot_url = f"t.me/{bot_tag}?start=0t{bank['bank_id']}"
-            preview_text = await cls.format_preview_text(bank, open_in_bot_url)
+            preview_text = await cls.format_preview_text(bank)
             photo_id = bank["bank_photo"]
             bank_url = bank["bank_url"]
             reply_markup = InlineKeyboardMarkup(inline_keyboard=[
